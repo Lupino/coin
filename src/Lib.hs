@@ -36,8 +36,8 @@ saveCoin conn name (Decr score time desc) = runRedis conn $ do
         lastkey = pack $ prekey ++ "lastid"
         coin = pack $ show (Decr score time desc)
 
-joinCoinIds :: String -> Integer -> ByteString
-joinCoinIds name id = pack $ "user:" ++ name ++ ":coins:" ++ idstr
+joinCoinId :: String -> Integer -> ByteString
+joinCoinId name id = pack $ "user:" ++ name ++ ":coins:" ++ idstr
   where idstr = show id
 
 extractCoin :: Maybe ByteString -> Maybe (Coin Integer Integer String)
@@ -53,7 +53,7 @@ getCoins conn name from size = do
       let start = id - from
       let end = maximum([0, start - size])
       let idrange = reverse [end..start]
-      let allkey = map (joinCoinIds name) idrange
+      let allkey = map (joinCoinId name) idrange
       runRedis conn $ do
         result <- mget allkey
         case result of
