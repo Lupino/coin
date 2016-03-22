@@ -18,11 +18,7 @@ saveCoin conn name (Incr score time desc) = runRedis conn $ do
     Right id -> do
       set (pack $ (++) prekey $ show id) $ pack coin
   totalscore <- flip incrby score $ pack $ prekey ++ "totalscore"
-  case totalscore of
-    Right v -> do
-      return (Just v)
-    _ -> do
-      return Nothing
+  return $ unpackIntegerScore totalscore
   where prekey = "user:" ++ name ++ ":coins:"
         coin = show (Incr score time desc)
 
@@ -32,11 +28,7 @@ saveCoin conn name (Decr score time desc) = runRedis conn $ do
     Right id -> do
       set (pack $ (++) prekey $ show id) $ pack coin
   totalscore <- flip decrby score $ pack $ prekey ++ "totalscore"
-  case totalscore of
-    Right v -> do
-      return (Just v)
-    _ -> do
-      return Nothing
+  return $ unpackIntegerScore totalscore
   where prekey = "user:" ++ name ++ ":coins:"
         coin = show (Decr score time desc)
 
@@ -72,19 +64,19 @@ getCoins conn name from size = do
 getLastID :: Connection -> String -> IO (Maybe Integer)
 getLastID conn name = runRedis conn $ do
   lastid <- get $ pack lastidkey
-  case lastid of
-    Right (Just v) -> do
-      return (Just (read $ unpack v :: Integer))
-    _ -> do
-      return Nothing
+  return $ unpackScore lastid
   where lastidkey = "user:" ++ name ++ ":coins:lastid"
 
 getScore :: Connection -> String -> IO (Maybe Integer)
 getScore conn name = runRedis conn $ do
   score <- get $ pack scorekey
-  case score of
-    Right (Just v) -> do
-      return (Just (read $ unpack v :: Integer))
-    _ -> do
-      return Nothing
+  return $ unpackScore score
   where scorekey = "user:" ++ name ++ ":coins:totalscore"
+
+unpackScore::Either Reply (Maybe ByteString) -> Maybe Integer
+unpackScore (Right (Just v)) = Just (read $ unpack v :: Integer)
+unpackScore _ = Nothing
+
+unpackIntegerScore::Either Reply Integer -> Maybe Integer
+unpackIntegerScore (Right v) = Just v
+unpackIntegerScore _ = Nothing
