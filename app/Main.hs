@@ -38,9 +38,7 @@ main = do
     get "/api/:name/coins/score/" $ do
       name <- param "name"
       score <- liftIO $ getScore conn name
-      case score of
-        Just v -> text . T.pack $ show v
-        Nothing -> text "0"
+      text $ packScore score
 
     get "/api/:name/coins/" $ do
       name <- param "name"
@@ -62,9 +60,11 @@ main = do
       b <- body
       let coin = read . T.unpack $ decodeUtf8 b :: Coin Integer Integer String
       score <- liftIO $ saveCoin conn name coin
-      case score of
-        Just v -> text . T.pack $ show v
-        Nothing -> text "0"
+      text $ packScore score
+
+packScore :: Maybe Integer -> T.Text
+packScore (Just v) = T.pack $ show v
+packScore Nothing = "0"
 
 toText :: Maybe (Coin Integer Integer String) -> T.Text
 toText (Just v) = T.pack (show v ++ "\n")
