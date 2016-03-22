@@ -9,6 +9,7 @@ import Lib
 
 import Web.Scotty
 import Network.Wai.Handler.Warp (setPort, setHost)
+import Network.Wai.Middleware.RequestLogger
 import Data.Streaming.Network.Internal (HostPreference(Host))
 
 import Control.Monad.IO.Class (liftIO)
@@ -35,6 +36,7 @@ main = do
 
   let opts = def { settings = setPort flags_port $ setHost (Host flags_host) (settings def) }
   scottyOpts opts $ do
+    middleware logStdoutDev
     get "/api/:name/coins/score/" $ do
       name <- param "name"
       score <- liftIO $ getScore conn name
