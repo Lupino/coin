@@ -12,29 +12,24 @@ data Coin a b c = Incr Integer Integer String | Decr Integer Integer String deri
 -- user:{username}:coins:lastid
 
 saveCoin ::Connection -> String -> Coin a b c -> IO (Maybe Integer)
-saveCoin conn name (Incr score time desc) = runRedis conn $ do
+saveCoin conn name coin = runRedis conn $ do
   lastid <- incrby lastkey 1
   case lastid of
     Right id -> do
-      set (pack . (++) prekey $ show id) coin
-  totalscore <- incrby scorekey score
-  return $ unpackIntegerScore totalscore
-  where prekey = "user:" ++ name ++ ":coins:"
-        scorekey = pack $ prekey ++ "totalscore"
-        lastkey = pack $ prekey ++ "lastid"
-        coin = pack $ show (Incr score time desc)
+      set (pack . (++) prekey $ show id) coindata
 
-saveCoin conn name (Decr score time desc) = runRedis conn $ do
-  lastid <- incrby lastkey 1
-  case lastid of
-    Right id -> do
-      set (pack . (++) prekey $ show id) coin
-  totalscore <- decrby scorekey score
-  return $ unpackIntegerScore totalscore
+  case coin of
+    Incr score _ _ -> do
+      totalscore <- incrby scorekey score
+      return $ unpackIntegerScore totalscore
+    Decr score _ _ -> do
+      totalscore <- decrby scorekey score
+      return $ unpackIntegerScore totalscore
+
   where prekey = "user:" ++ name ++ ":coins:"
         scorekey = pack $ prekey ++ "totalscore"
         lastkey = pack $ prekey ++ "lastid"
-        coin = pack $ show (Decr score time desc)
+        coindata = pack $ show coin
 
 joinCoinId :: String -> Integer -> ByteString
 joinCoinId name id = pack $ "user:" ++ name ++ ":coins:" ++ idstr
