@@ -5,13 +5,13 @@ import Database.Redis
 import Data.ByteString.Char8 (ByteString, pack, unpack)
 import Control.Monad.Trans (liftIO)
 
-data Coin a b c = Incr Integer Integer String | Decr Integer Integer String deriving (Show, Read)
+data Coin = Incr Integer Integer String | Decr Integer Integer String deriving (Show, Read)
 
 -- user:{username}:coins:totalscore
 -- user:{username}:coins:{coinId}
 -- user:{username}:coins:lastid
 
-saveCoin ::Connection -> String -> Coin a b c -> IO (Maybe Integer)
+saveCoin ::Connection -> String -> Coin -> IO (Maybe Integer)
 saveCoin conn name coin = runRedis conn $ do
   lastid <- incrby lastkey 1
   case lastid of
@@ -35,12 +35,12 @@ joinCoinId :: String -> Integer -> ByteString
 joinCoinId name id = pack $ "user:" ++ name ++ ":coins:" ++ idstr
   where idstr = show id
 
-extractCoin :: Maybe ByteString -> Maybe (Coin Integer Integer String)
+extractCoin :: Maybe ByteString -> Maybe (Coin)
 extractCoin (Just v) = Just coin
-  where coin = read $ unpack v :: Coin Integer Integer String
+  where coin = read $ unpack v :: Coin
 extractCoin Nothing = Nothing
 
-getCoins :: Connection -> String -> Integer -> Integer -> IO (Maybe (Integer, [Maybe (Coin Integer Integer String)]))
+getCoins :: Connection -> String -> Integer -> Integer -> IO (Maybe (Integer, [Maybe (Coin)]))
 getCoins conn name from size = do
   lastid <- getLastID conn name
   case lastid of

@@ -60,7 +60,7 @@ main = do
     post "/api/:name/coins/" $ do
       name <- param "name"
       b <- body
-      let coin = read . T.unpack $ decodeUtf8 b :: Coin Integer Integer String
+      let coin = read . T.unpack $ decodeUtf8 b :: Coin
       score <- liftIO $ saveCoin conn name coin
       text $ packScore score
 
@@ -68,6 +68,6 @@ packScore :: Maybe Integer -> T.Text
 packScore (Just v) = T.pack $ show v
 packScore Nothing = "0"
 
-toText :: Maybe (Coin Integer Integer String) -> T.Text
+toText :: Maybe (Coin) -> T.Text
 toText (Just v) = T.pack (show v ++ "\n")
 toText Nothing = ""
