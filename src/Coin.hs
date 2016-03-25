@@ -3,7 +3,6 @@ module Coin ( saveCoin, getLastID, getCoins, getScore, Coin(..) ) where
 
 import Database.Redis
 import Data.ByteString.Char8 (ByteString, pack, unpack)
-import Control.Monad.Trans (liftIO)
 
 type Score = Integer
 type Created = Integer

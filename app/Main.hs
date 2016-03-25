@@ -13,9 +13,6 @@ import Network.Wai.Middleware.RequestLogger
 import Data.Streaming.Network.Internal (HostPreference(Host))
 
 import Control.Monad.IO.Class (liftIO)
-import qualified Blaze.ByteString.Builder as B
-import qualified Data.ByteString as BS
-import qualified Data.ByteString.Lazy as BSL
 import qualified Data.Text.Lazy as T
 import Data.Text.Lazy.Encoding (decodeUtf8)
 import Data.Default.Class (def)
