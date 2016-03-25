@@ -5,7 +5,11 @@ import Database.Redis
 import Data.ByteString.Char8 (ByteString, pack, unpack)
 import Control.Monad.Trans (liftIO)
 
-data Coin = Incr Integer Integer String | Decr Integer Integer String deriving (Show, Read)
+type Score = Integer
+type Created = Integer
+type Description = String
+
+data Coin = Incr Score Created Description | Decr Score Created Description deriving (Show, Read)
 
 -- user:{username}:coins:totalscore
 -- user:{username}:coins:{coinId}
