@@ -11,9 +11,9 @@ type Description = String
 
 data Coin = Incr Score Created Description | Decr Score Created Description deriving (Show, Read)
 
--- user:{username}:coins:totalscore
--- user:{username}:coins:{coinId}
--- user:{username}:coins:lastid
+-- coins:{username}:totalscore
+-- coins:{username}:{coinId}
+-- coins:{username}:lastid
 
 saveCoin ::Connection -> String -> Coin -> IO (Maybe Integer)
 saveCoin conn name coin = runRedis conn $ do
@@ -30,13 +30,13 @@ saveCoin conn name coin = runRedis conn $ do
       totalscore <- decrby scorekey score
       return $ unpackIntegerScore totalscore
 
-  where prekey = "user:" ++ name ++ ":coins:"
+  where prekey = "coins:" ++ name ++ ":"
         scorekey = pack $ prekey ++ "totalscore"
         lastkey = pack $ prekey ++ "lastid"
         coindata = pack $ show coin
 
 joinCoinId :: String -> Integer -> ByteString
-joinCoinId name id = pack $ "user:" ++ name ++ ":coins:" ++ idstr
+joinCoinId name id = pack $ "coins:" ++ name ++ ":" ++ idstr
   where idstr = show id
 
 extractCoin :: Maybe ByteString -> Maybe (Coin)
@@ -68,13 +68,13 @@ getLastID :: Connection -> String -> IO (Maybe Integer)
 getLastID conn name = runRedis conn $ do
   lastid <- get $ pack lastidkey
   return $ unpackScore lastid
-  where lastidkey = "user:" ++ name ++ ":coins:lastid"
+  where lastidkey = "coins:" ++ name ++ ":lastid"
 
 getScore :: Connection -> String -> IO (Maybe Integer)
 getScore conn name = runRedis conn $ do
   score <- get $ pack scorekey
   return $ unpackScore score
-  where scorekey = "user:" ++ name ++ ":coins:totalscore"
+  where scorekey = "coins:" ++ name ++ ":totalscore"
 
 unpackScore::Either Reply (Maybe ByteString) -> Maybe Integer
 unpackScore (Right (Just v)) = Just (read $ unpack v :: Integer)
