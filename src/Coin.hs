@@ -16,22 +16,33 @@ data Coin = Incr Score Created Description | Decr Score Created Description deri
 -- coins:{username}:lastid
 
 saveCoin ::Connection -> String -> Coin -> IO (Maybe Integer)
-saveCoin conn name coin = runRedis conn $ do
+saveCoin conn name coin = do
+  lastid <- saveCoin' conn name coin
+  case lastid of
+    Just _ -> updateScore conn name coin
+    Nothing -> return Nothing
+
+updateScore :: Connection -> String -> Coin -> IO (Maybe Integer)
+updateScore conn name (Incr score _ _) = runRedis conn $ do
+  totalscore <- incrby scorekey score
+  return $ unpackIntegerScore totalscore
+  where scorekey = pack $ "coins:" ++ name ++ ":totalscore"
+
+updateScore conn name (Decr score _ _) = runRedis conn $ do
+  totalscore <- decrby scorekey score
+  return $ unpackIntegerScore totalscore
+  where scorekey = pack $ "coins:" ++ name ++ ":totalscore"
+
+saveCoin' ::Connection -> String -> Coin -> IO (Maybe Integer)
+saveCoin' conn name coin = runRedis conn $ do
   lastid <- incrby lastkey 1
   case lastid of
     Right id -> do
       set (pack . (++) prekey $ show id) coindata
-
-  case coin of
-    Incr score _ _ -> do
-      totalscore <- incrby scorekey score
-      return $ unpackIntegerScore totalscore
-    Decr score _ _ -> do
-      totalscore <- decrby scorekey score
-      return $ unpackIntegerScore totalscore
-
+      return (Just id)
+    _ -> do
+      return Nothing
   where prekey = "coins:" ++ name ++ ":"
-        scorekey = pack $ prekey ++ "totalscore"
         lastkey = pack $ prekey ++ "lastid"
         coindata = pack $ show coin
 
