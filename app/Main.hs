@@ -37,12 +37,12 @@ main = do
   let opts = def { settings = setPort flags_port $ setHost (Host flags_host) (settings def) }
   scottyOpts opts $ do
     middleware logStdoutDev
-    get "/api/:name/coins/score/" $ do
+    get "/api/coins/:name/score/" $ do
       name <- param "name"
       score <- liftIO $ getScore conn name
       text $ packScore score
 
-    get "/api/:name/coins/" $ do
+    get "/api/coins/:name/" $ do
       name <- param "name"
       from <- param "from"
       size <- param "size"
@@ -57,7 +57,7 @@ main = do
           T.pack $ show total, "\n" ]  ++ map toText v
         Nothing -> text ""
 
-    post "/api/:name/coins/" $ do
+    post "/api/coins/:name/" $ do
       name <- param "name"
       b <- body
       let coin = read . T.unpack $ decodeUtf8 b :: Coin
