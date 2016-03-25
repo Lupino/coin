@@ -44,8 +44,8 @@ main = do
 
     get "/api/coins/:name/" $ do
       name <- param "name"
-      from <- param "from"
-      size <- param "size"
+      from <- param "from"  `rescue` (\_ -> return 0)
+      size <- param "size" `rescue` (\_ -> return 10)
       ret <- liftIO $ getCoins conn name from size
       case ret of
         Just (total, v) -> text . mconcat $ [
