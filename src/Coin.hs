@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Lib ( saveCoin, getLastID, getCoins, getScore, Coin(..) ) where
+module Coin ( saveCoin, getLastID, getCoins, getScore, Coin(..) ) where
 
 import Database.Redis
 import Data.ByteString.Char8 (ByteString, pack, unpack)

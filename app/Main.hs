@@ -5,7 +5,7 @@ module Main where
 import HFlags
 import Database.Redis (connect, defaultConnectInfo, ConnectInfo(..))
 import Network (PortID(PortNumber))
-import Lib
+import Coin
 
 import Web.Scotty
 import Network.Wai.Handler.Warp (setPort, setHost)
