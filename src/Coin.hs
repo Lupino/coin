@@ -33,6 +33,8 @@ updateScore conn name (Decr score _ _) = runRedis conn $ do
   where scorekey = pack $ "coins:" ++ name ++ ":totalscore"
 
 saveCoin' ::Connection -> String -> Coin -> IO (Maybe Integer)
+saveCoin' conn name (Incr score _ _) | score < 1 = return Nothing
+saveCoin' conn name (Decr score _ _) | score < 1 = return Nothing
 saveCoin' conn name coin = runRedis conn $ do
   lastid <- incrby lastkey 1
   case lastid of
