@@ -22,15 +22,17 @@ saveCoin conn name coin = do
     Nothing -> return Nothing
 
 updateScore :: Connection -> String -> Coin -> IO (Maybe Integer)
-updateScore conn name (Incr score _ _) = runRedis conn $ do
+updateScore conn name (Incr score _ _) | score > 0 = runRedis conn $ do
   totalscore <- incrby scorekey score
   return $ unpackIntegerScore totalscore
   where scorekey = pack $ "coins:" ++ name ++ ":totalscore"
 
-updateScore conn name (Decr score _ _) = runRedis conn $ do
+updateScore conn name (Decr score _ _) | score > 0 = runRedis conn $ do
   totalscore <- decrby scorekey score
   return $ unpackIntegerScore totalscore
   where scorekey = pack $ "coins:" ++ name ++ ":totalscore"
+
+updateScore _ _ _ = return Nothing
 
 saveCoin' ::Connection -> String -> Coin -> IO (Maybe Integer)
 saveCoin' conn name (Incr score _ _) | score < 1 = return Nothing
