@@ -43,8 +43,7 @@ saveCoin' conn name coin = runRedis conn $ do
     Right id -> do
       set (pack . (++) prekey $ show id) coindata
       return (Just id)
-    _ -> do
-      return Nothing
+    _ -> return Nothing
   where prekey = "coins:" ++ name ++ ":"
         lastkey = pack $ prekey ++ "lastid"
         coindata = pack $ show coin
@@ -53,18 +52,18 @@ joinCoinId :: String -> Integer -> ByteString
 joinCoinId name id = pack $ "coins:" ++ name ++ ":" ++ idstr
   where idstr = show id
 
-extractCoin :: Maybe ByteString -> Maybe (Coin)
+extractCoin :: Maybe ByteString -> Maybe Coin
 extractCoin (Just v) = Just coin
   where coin = read $ unpack v :: Coin
 extractCoin Nothing = Nothing
 
-getCoins :: Connection -> String -> Integer -> Integer -> IO (Maybe (Integer, [Maybe (Coin)]))
+getCoins :: Connection -> String -> Integer -> Integer -> IO (Maybe (Integer, [Maybe Coin]))
 getCoins conn name from size = do
   lastid <- getLastID conn name
   case lastid of
     Just id -> do
       let start = id - from
-      let end = maximum([0, start - size])
+      let end = maximum [0, start - size]
       let idrange = reverse [end..start]
       let allkey = map (joinCoinId name) idrange
       runRedis conn $ do
@@ -73,10 +72,8 @@ getCoins conn name from size = do
           Right v -> do
             let ret = map extractCoin v
             return (Just (id, ret))
-          _ -> do
-            return Nothing
-    Nothing -> do
-      return Nothing
+          _ -> return Nothing
+    Nothing -> return Nothing
 
 getLastID :: Connection -> String -> IO (Maybe Integer)
 getLastID conn name = runRedis conn $ do

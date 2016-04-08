@@ -65,6 +65,6 @@ packScore :: Maybe Integer -> T.Text
 packScore (Just v) = T.pack $ show v
 packScore Nothing = "0"
 
-toText :: Maybe (Coin) -> T.Text
+toText :: Maybe Coin -> T.Text
 toText (Just v) = T.pack (show v ++ "\n")
 toText Nothing = ""
