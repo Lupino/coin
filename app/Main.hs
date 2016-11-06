@@ -3,23 +3,27 @@ module Main where
 
 import           Coin
 import           Database.Redis                       (ConnectInfo (..),
+                                                       Connection, Redis,
                                                        connect,
-                                                       defaultConnectInfo)
+                                                       defaultConnectInfo,
+                                                       runRedis)
 import           Network                              (PortID (PortNumber))
 
 import           Data.Streaming.Network.Internal      (HostPreference (Host))
 import           Network.Wai.Handler.Warp             (setHost, setPort)
 import           Network.Wai.Middleware.RequestLogger
-import           Web.Scotty                           (body, get, json,
-                                                       middleware, param, post,
-                                                       rescue, scottyOpts,
-                                                       settings)
+import           Web.Scotty.Trans                     (ActionT, ScottyT, body,
+                                                       get, json, middleware,
+                                                       param, post, rescue,
+                                                       scottyOptsT, settings)
 
 import           Control.Monad.IO.Class               (liftIO)
 import           Data.Default.Class                   (def)
-import qualified Data.Text.Lazy                       as T
+import qualified Data.Text.Lazy                       as LT (Text, pack)
 
 import           Data.Aeson                           (decode, object, (.=))
+
+import           Control.Monad.Reader                 (lift)
 
 import           Options.Applicative
 
@@ -51,6 +55,10 @@ parser = Options <$> strOption (long "host"
                                   <> help "Redis server port."
                                   <> value 6379)
 
+
+type ActionM a = ActionT LT.Text Redis a
+type ScottyM a = ScottyT LT.Text Redis a
+
 main :: IO ()
 main = execParser opts >>= program
   where
@@ -67,26 +75,37 @@ program opts = do
   }
 
   let opts' = def { settings = setPort (getPort opts) $ setHost (Host $ getHost opts) (settings def) }
-  scottyOpts opts' $ do
-    middleware logStdoutDev
-    get "/api/coins/:name/score/" $ do
-      name <- param "name"
-      score <- liftIO $ getScore conn name
-      json $ object [ "score" .= score ]
+  scottyOptsT opts' (runRedis conn) application
 
-    get "/api/coins/:name/" $ do
-      name <- param "name"
-      from <- param "from"  `rescue` (\_ -> return 0)
-      size <- param "size" `rescue` (\_ -> return 10)
-      ret <- liftIO $ getCoins conn name from size
 
-      json $ object ["total" .= fst ret, "from" .= from, "size" .= size, "coins" .= snd ret]
+application :: ScottyM ()
+application = do
+  middleware logStdoutDev
+  get "/api/coins/:name/score/" $ getScoreHandler
+  get "/api/coins/:name/" $ getCoinListHandler
+  post "/api/coins/:name/" $ saveCoinHandler
 
-    post "/api/coins/:name/" $ do
-      name <- param "name"
-      b <- body
-      case (decode b :: Maybe Coin) of
-        Just coin -> do
-          score <- liftIO $ saveCoin conn name coin
-          json $ object [ "score" .= score ]
-        Nothing -> json $ object [ "err" .= T.pack "Coin format error" ]
+getScoreHandler :: ActionM ()
+getScoreHandler = do
+  name <- param "name"
+  score <- lift $ getScore name
+  json $ object [ "score" .= score ]
+
+getCoinListHandler :: ActionM ()
+getCoinListHandler = do
+    name <- param "name"
+    from <- param "from"  `rescue` (\_ -> return 0)
+    size <- param "size" `rescue` (\_ -> return 10)
+    ret <- lift $ getCoins name from size
+
+    json $ object ["total" .= fst ret, "from" .= from, "size" .= size, "coins" .= snd ret]
+
+saveCoinHandler :: ActionM ()
+saveCoinHandler = do
+    name <- param "name"
+    b <- body
+    case (decode b :: Maybe Coin) of
+      Just coin -> do
+        score <- lift $ saveCoin name coin
+        json $ object [ "score" .= score ]
+      Nothing -> json $ object [ "err" .= LT.pack "Coin format error" ]
