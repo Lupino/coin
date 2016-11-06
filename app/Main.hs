@@ -30,7 +30,8 @@ import           Options.Applicative
 data Options = Options { getHost      :: String
                        , getPort      :: Int
                        , getRedisHost :: String
-                       , getRedisPort :: Int }
+                       , getRedisPort :: Int
+                       , getRedisDb   :: Int }
 
 parser :: Parser Options
 parser = Options <$> strOption (long "host"
@@ -55,6 +56,11 @@ parser = Options <$> strOption (long "host"
                                   <> help "Redis server port."
                                   <> value 6379)
 
+                 <*> option auto (long "redis_db"
+                                  <> metavar "DB"
+                                  <> help "Redis server db."
+                                  <> value 0)
+
 
 type ActionM a = ActionT LT.Text Redis a
 type ScottyM a = ScottyT LT.Text Redis a
@@ -71,7 +77,8 @@ program :: Options -> IO ()
 program opts = do
   conn <- connect $ defaultConnectInfo {
     connectHost = getRedisHost opts,
-    connectPort = PortNumber . fromIntegral $ getRedisPort opts
+    connectPort = PortNumber . fromIntegral $ getRedisPort opts,
+    connectDatabase = fromIntegral $ getRedisDb opts
   }
 
   let opts' = def { settings = setPort (getPort opts) $ setHost (Host $ getHost opts) (settings def) }
