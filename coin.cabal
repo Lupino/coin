@@ -19,9 +19,10 @@ library
   build-depends:       base >= 4.7 && < 5
                      , hedis
                      , bytestring
+                     , aeson
   default-language:    Haskell2010
 
-executable coin-exe
+executable coin
   hs-source-dirs:      app
   main-is:             Main.hs
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
@@ -30,14 +31,15 @@ executable coin-exe
                      , hedis
                      , mtl
                      , scotty
+                     , aeson
                      , text
                      , transformers
                      , warp
                      , data-default-class
-                     , hflags
                      , streaming-commons
                      , network
                      , wai-extra
+                     , optparse-applicative
   default-language:    Haskell2010
 
 test-suite coin-test

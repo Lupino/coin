@@ -1,70 +1,92 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
 module Main where
 
 import           Coin
 import           Database.Redis                       (ConnectInfo (..),
                                                        connect,
                                                        defaultConnectInfo)
-import           HFlags
 import           Network                              (PortID (PortNumber))
 
 import           Data.Streaming.Network.Internal      (HostPreference (Host))
 import           Network.Wai.Handler.Warp             (setHost, setPort)
 import           Network.Wai.Middleware.RequestLogger
-import           Web.Scotty
+import           Web.Scotty                           (body, get, json,
+                                                       middleware, param, post,
+                                                       rescue, scottyOpts,
+                                                       settings)
 
 import           Control.Monad.IO.Class               (liftIO)
 import           Data.Default.Class                   (def)
 import qualified Data.Text.Lazy                       as T
-import           Data.Text.Lazy.Encoding              (decodeUtf8)
 
-defineFlag "h:host" ("127.0.0.1"::String) "Coin server host."
-defineFlag "p:port" (3000::Int) "Coin server port."
-defineFlag "redis_host" ("127.0.0.1"::String) "Redis server host."
-defineFlag "redis_port" (6379::Int) "Redis server port."
-return []
+import           Data.Aeson                           (decode, object, (.=))
+
+import           Options.Applicative
+
+data Options = Options { getHost      :: String
+                       , getPort      :: Int
+                       , getRedisHost :: String
+                       , getRedisPort :: Int }
+
+parser :: Parser Options
+parser = Options <$> strOption (long "host"
+                                <> short 'H'
+                                <> metavar "HOST"
+                                <> help "Coin server host."
+                                <> value "127.0.0.1")
+
+                 <*> option auto (long "port"
+                                  <> short 'p'
+                                  <> metavar "PORT"
+                                  <> help "Coin server port."
+                                  <> value 3000)
+
+                 <*> strOption (long "redis_host"
+                                <> metavar "HOST"
+                                <> help "Redis server host."
+                                <> value "127.0.0.1" )
+
+                 <*> option auto (long "redis_port"
+                                  <> metavar "PORT"
+                                  <> help "Redis server port."
+                                  <> value 6379)
 
 main :: IO ()
-main = do
-  s <- $initHFlags "Coin v0.1"
+main = execParser opts >>= program
+  where
+    opts = info (helper <*> parser)
+      ( fullDesc
+     <> progDesc "Patent server"
+     <> header "patent - Patent server" )
+
+program :: Options -> IO ()
+program opts = do
   conn <- connect $ defaultConnectInfo {
-    connectHost = flags_redis_host,
-    connectPort = PortNumber $ fromIntegral flags_redis_port
+    connectHost = getRedisHost opts,
+    connectPort = PortNumber . fromIntegral $ getRedisPort opts
   }
 
-  let opts = def { settings = setPort flags_port $ setHost (Host flags_host) (settings def) }
-  scottyOpts opts $ do
+  let opts' = def { settings = setPort (getPort opts) $ setHost (Host $ getHost opts) (settings def) }
+  scottyOpts opts' $ do
     middleware logStdoutDev
     get "/api/coins/:name/score/" $ do
       name <- param "name"
       score <- liftIO $ getScore conn name
-      text $ packScore score
+      json $ object [ "score" .= score ]
 
     get "/api/coins/:name/" $ do
       name <- param "name"
       from <- param "from"  `rescue` (\_ -> return 0)
       size <- param "size" `rescue` (\_ -> return 10)
       ret <- liftIO $ getCoins conn name from size
-      text . mconcat $ [
-        "Total ",
-        T.pack $ show from,
-        " ",
-        T.pack $ show size,
-        " ",
-        T.pack $ show (fst ret), "\n" ] ++ map toText (snd ret)
+
+      json $ object ["total" .= fst ret, "from" .= from, "size" .= size, "coins" .= snd ret]
 
     post "/api/coins/:name/" $ do
       name <- param "name"
       b <- body
-      let coin = read . T.unpack $ decodeUtf8 b :: Coin
-      score <- liftIO $ saveCoin conn name coin
-      text $ packScore score
-
-packScore :: Maybe Integer -> T.Text
-packScore (Just v) = T.pack $ show v
-packScore Nothing  = "0"
-
-toText :: Maybe Coin -> T.Text
-toText (Just v) = T.pack (show v ++ "\n")
-toText Nothing  = ""
+      case (decode b :: Maybe Coin) of
+        Just coin -> do
+          score <- liftIO $ saveCoin conn name coin
+          json $ object [ "score" .= score ]
+        Nothing -> json $ object [ "err" .= T.pack "Coin format error" ]
