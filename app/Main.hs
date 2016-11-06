@@ -1,21 +1,23 @@
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell   #-}
 module Main where
 
-import HFlags
-import Database.Redis (connect, defaultConnectInfo, ConnectInfo(..))
-import Network (PortID(PortNumber))
-import Coin
+import           Coin
+import           Database.Redis                       (ConnectInfo (..),
+                                                       connect,
+                                                       defaultConnectInfo)
+import           HFlags
+import           Network                              (PortID (PortNumber))
 
-import Web.Scotty
-import Network.Wai.Handler.Warp (setPort, setHost)
-import Network.Wai.Middleware.RequestLogger
-import Data.Streaming.Network.Internal (HostPreference(Host))
+import           Data.Streaming.Network.Internal      (HostPreference (Host))
+import           Network.Wai.Handler.Warp             (setHost, setPort)
+import           Network.Wai.Middleware.RequestLogger
+import           Web.Scotty
 
-import Control.Monad.IO.Class (liftIO)
-import qualified Data.Text.Lazy as T
-import Data.Text.Lazy.Encoding (decodeUtf8)
-import Data.Default.Class (def)
+import           Control.Monad.IO.Class               (liftIO)
+import           Data.Default.Class                   (def)
+import qualified Data.Text.Lazy                       as T
+import           Data.Text.Lazy.Encoding              (decodeUtf8)
 
 defineFlag "h:host" ("127.0.0.1"::String) "Coin server host."
 defineFlag "p:port" (3000::Int) "Coin server port."
@@ -61,8 +63,8 @@ main = do
 
 packScore :: Maybe Integer -> T.Text
 packScore (Just v) = T.pack $ show v
-packScore Nothing = "0"
+packScore Nothing  = "0"
 
 toText :: Maybe Coin -> T.Text
 toText (Just v) = T.pack (show v ++ "\n")
-toText Nothing = ""
+toText Nothing  = ""

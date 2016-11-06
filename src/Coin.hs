@@ -1,14 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Coin ( saveCoin, getLastID, getCoins, getScore, Coin(..) ) where
 
-import Database.Redis
-import Data.ByteString.Char8 (ByteString, pack, unpack)
+import           Data.ByteString.Char8 (ByteString, pack, unpack)
+import           Database.Redis
 
 type Score = Integer
 type Created = Integer
 type Description = String
 
-data Coin = Incr Score Created Description | Decr Score Created Description deriving (Show, Read)
+data Coin = Incr Score Created Description
+          | Decr Score Created Description deriving (Show, Read)
 
 -- coins:{username}:totalscore
 -- coins:{username}:{coinId}
@@ -18,7 +19,7 @@ saveCoin ::Connection -> String -> Coin -> IO (Maybe Integer)
 saveCoin conn name coin = do
   lastid <- saveCoin' conn name coin
   case lastid of
-    Just _ -> updateScore conn name coin
+    Just _  -> updateScore conn name coin
     Nothing -> return Nothing
 
 updateScore :: Connection -> String -> Coin -> IO (Maybe Integer)
@@ -89,8 +90,8 @@ getScore conn name = runRedis conn $ do
 
 unpackScore::Either Reply (Maybe ByteString) -> Maybe Integer
 unpackScore (Right (Just v)) = Just (read $ unpack v :: Integer)
-unpackScore _ = Nothing
+unpackScore _                = Nothing
 
 unpackIntegerScore::Either Reply Integer -> Maybe Integer
 unpackIntegerScore (Right v) = Just v
-unpackIntegerScore _ = Nothing
+unpackIntegerScore _         = Nothing
