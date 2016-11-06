@@ -57,7 +57,7 @@ extractCoin (Just v) = Just coin
   where coin = read $ unpack v :: Coin
 extractCoin Nothing = Nothing
 
-getCoins :: Connection -> String -> Integer -> Integer -> IO (Maybe (Integer, [Maybe Coin]))
+getCoins :: Connection -> String -> Integer -> Integer -> IO (Integer, [Maybe Coin])
 getCoins conn name from size = do
   lastid <- getLastID conn name
   case lastid of
@@ -71,9 +71,9 @@ getCoins conn name from size = do
         case result of
           Right v -> do
             let ret = map extractCoin v
-            return (Just (id, ret))
-          _ -> return Nothing
-    Nothing -> return Nothing
+            return (id, ret)
+          _ -> return (0, [])
+    Nothing -> return (0, [])
 
 getLastID :: Connection -> String -> IO (Maybe Integer)
 getLastID conn name = runRedis conn $ do

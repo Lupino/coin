@@ -44,15 +44,13 @@ main = do
       from <- param "from"  `rescue` (\_ -> return 0)
       size <- param "size" `rescue` (\_ -> return 10)
       ret <- liftIO $ getCoins conn name from size
-      case ret of
-        Just (total, v) -> text . mconcat $ [
-          "Total ",
-          T.pack $ show from,
-          " ",
-          T.pack $ show size,
-          " ",
-          T.pack $ show total, "\n" ]  ++ map toText v
-        Nothing -> text ""
+      text . mconcat $ [
+        "Total ",
+        T.pack $ show from,
+        " ",
+        T.pack $ show size,
+        " ",
+        T.pack $ show (fst ret), "\n" ] ++ map toText (snd ret)
 
     post "/api/coins/:name/" $ do
       name <- param "name"
