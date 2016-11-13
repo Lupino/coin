@@ -2,14 +2,15 @@
 {-# LANGUAGE RecordWildCards   #-}
 module Coin
   (
-    saveCoin,
-    getCoins,
-    getScore,
-    Coin (..),
-    zeroCoin,
-    Score,
-    Created,
-    Description
+    saveCoin
+  , getCoins
+  , getScore
+  , Coin (..)
+  , CoinType (..)
+  , zeroCoin
+  , Score
+  , Created
+  , Description
   ) where
 
 import           Data.Aeson             (FromJSON (..), ToJSON (..),
