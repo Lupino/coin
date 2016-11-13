@@ -70,8 +70,8 @@ main = execParser opts >>= program
   where
     opts = info (helper <*> parser)
       ( fullDesc
-     <> progDesc "Patent server"
-     <> header "patent - Patent server" )
+     <> progDesc "Coin server"
+     <> header "coin - Coin server" )
 
 program :: Options -> IO ()
 program opts = do
