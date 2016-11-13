@@ -115,11 +115,23 @@ saveCoinHandler = do
   tp    <- param "type"
   ct    <- param "created_at" `rescue` (\_ -> return 0)
 
-  ret <- lift $ saveCoin name (zeroCoin { getCoinScore = score
-                                        , getCoinType = read tp
-                                        , getCoinDesc = desc
-                                        , getCoinCreatedAt = ct
-                                        })
+  case readType tp of
+    Just tp' -> do
+      ret <- lift $ saveCoin name (zeroCoin { getCoinScore = score
+                                            , getCoinType = tp'
+                                            , getCoinDesc = desc
+                                            , getCoinCreatedAt = ct
+                                            })
 
 
-  json $ object [ "score" .= ret ]
+      json $ object [ "score" .= ret ]
+    Nothing -> json $ object [ "err" .= LT.pack "Invalid type" ]
+
+  where readType :: String -> Maybe CoinType
+        readType "Incr" = Just Incr
+        readType "Decr" = Just Decr
+        readType "incr" = Just Incr
+        readType "decr" = Just Decr
+        readType "INCR" = Just Incr
+        readType "DECR" = Just Decr
+        readType _      = Nothing
