@@ -100,19 +100,26 @@ getScoreHandler = do
 
 getCoinListHandler :: ActionM ()
 getCoinListHandler = do
-    name <- param "name"
-    from <- param "from"  `rescue` (\_ -> return 0)
-    size <- param "size" `rescue` (\_ -> return 10)
-    ret <- lift $ getCoins name from size
+  name <- param "name"
+  from <- param "from"  `rescue` (\_ -> return 0)
+  size <- param "size" `rescue` (\_ -> return 10)
 
-    json $ object ["total" .= fst ret, "from" .= from, "size" .= size, "coins" .= snd ret]
+  ret <- lift $ getCoins name from size
+  json $ object ["total" .= fst ret, "from" .= from, "size" .= size, "coins" .= snd ret]
 
 saveCoinHandler :: ActionM ()
 saveCoinHandler = do
-    name <- param "name"
-    b <- body
-    case (decode b :: Maybe Coin) of
-      Just coin -> do
-        score <- lift $ saveCoin name coin
-        json $ object [ "score" .= score ]
-      Nothing -> json $ object [ "err" .= LT.pack "Coin format error" ]
+  name  <- param "name"
+  score <- param "score"
+  desc  <- param "desc" `rescue` (\_ -> return "")
+  tp    <- param "type"
+  ct    <- param "created_at" `rescue` (\_ -> return 0)
+
+  ret <- lift $ saveCoin name (zeroCoin { getCoinScore = score
+                                        , getCoinType = read tp
+                                        , getCoinDesc = desc
+                                        , getCoinCreatedAt = ct
+                                        })
+
+
+  json $ object [ "score" .= ret ]

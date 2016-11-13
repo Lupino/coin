@@ -20,6 +20,7 @@ library
                      , hedis
                      , bytestring
                      , aeson
+                     , unix-time
   default-language:    Haskell2010
 
 executable coin
