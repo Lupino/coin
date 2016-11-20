@@ -31,7 +31,9 @@ data Options = Options { getHost      :: String
                        , getPort      :: Int
                        , getRedisHost :: String
                        , getRedisPort :: Int
-                       , getRedisDb   :: Int }
+                       , getRedisDb   :: Int
+                       , getPrefix    :: String
+                       }
 
 parser :: Parser Options
 parser = Options <$> strOption (long "host"
@@ -61,6 +63,11 @@ parser = Options <$> strOption (long "host"
                                   <> help "Redis server db."
                                   <> value 0)
 
+                 <*> strOption (long "prefix"
+                                <> metavar "PREFIX"
+                                <> help "Redis prefix key."
+                                <> value "")
+
 
 type ActionM a = ActionT LT.Text Redis a
 type ScottyM a = ScottyT LT.Text Redis a
@@ -82,33 +89,38 @@ program opts = do
   }
 
   let opts' = def { settings = setPort (getPort opts) $ setHost (Host $ getHost opts) (settings def) }
-  scottyOptsT opts' (runRedis conn) application
+  scottyOptsT opts' (runRedis conn) $ application (fixPrefix $ getPrefix opts)
+
+fixPrefix :: String -> String -> String
+fixPrefix [] ys                  = ys
+fixPrefix xs ys | last xs == ':' = xs ++ ys
+                | otherwise      = xs ++ [':'] ++ ys
 
 
-application :: ScottyM ()
-application = do
+application :: (String -> String) -> ScottyM ()
+application fix = do
   middleware logStdoutDev
-  get "/api/coins/:name/score/" $ getScoreHandler
-  get "/api/coins/:name/" $ getCoinListHandler
-  post "/api/coins/:name/" $ saveCoinHandler
+  get "/api/coins/:name/score/" $ getScoreHandler fix
+  get "/api/coins/:name/" $ getCoinListHandler fix
+  post "/api/coins/:name/" $ saveCoinHandler fix
 
-getScoreHandler :: ActionM ()
-getScoreHandler = do
+getScoreHandler :: (String -> String) -> ActionM ()
+getScoreHandler fix = do
   name <- param "name"
-  score <- lift $ getScore name
+  score <- lift $ getScore (fix name)
   json $ object [ "score" .= score ]
 
-getCoinListHandler :: ActionM ()
-getCoinListHandler = do
+getCoinListHandler :: (String -> String) -> ActionM ()
+getCoinListHandler fix = do
   name <- param "name"
   from <- param "from"  `rescue` (\_ -> return 0)
   size <- param "size" `rescue` (\_ -> return 10)
 
-  ret <- lift $ getCoins name from size
+  ret <- lift $ getCoins (fix name) from size
   json $ object ["total" .= fst ret, "from" .= from, "size" .= size, "coins" .= snd ret]
 
-saveCoinHandler :: ActionM ()
-saveCoinHandler = do
+saveCoinHandler :: (String -> String) -> ActionM ()
+saveCoinHandler fix = do
   name  <- param "name"
   score <- param "score"
   desc  <- param "desc" `rescue` (\_ -> return "")
@@ -117,11 +129,11 @@ saveCoinHandler = do
 
   case readType tp of
     Just tp' -> do
-      ret <- lift $ saveCoin name (zeroCoin { getCoinScore = score
-                                            , getCoinType = tp'
-                                            , getCoinDesc = desc
-                                            , getCoinCreatedAt = ct
-                                            })
+      ret <- lift $ saveCoin (fix name) (zeroCoin { getCoinScore = score
+                                                  , getCoinType = tp'
+                                                  , getCoinDesc = desc
+                                                  , getCoinCreatedAt = ct
+                                                  })
 
 
       json $ object [ "score" .= ret ]
