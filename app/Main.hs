@@ -11,7 +11,7 @@ import           Network                              (PortID (PortNumber))
 
 import           Data.Streaming.Network.Internal      (HostPreference (Host))
 import           Network.Wai.Handler.Warp             (setHost, setPort)
-import           Network.Wai.Middleware.RequestLogger
+import           Network.Wai.Middleware.RequestLogger (logStdout)
 import           Web.Scotty.Trans                     (ActionT, ScottyT, body,
                                                        get, json, middleware,
                                                        param, post, rescue,
@@ -99,7 +99,7 @@ fixPrefix xs ys | last xs == ':' = xs ++ ys
 
 application :: (String -> String) -> ScottyM ()
 application fix = do
-  middleware logStdoutDev
+  middleware logStdout
   get "/api/coins/:name/score/" $ getScoreHandler fix
   get "/api/coins/:name/" $ getCoinListHandler fix
   post "/api/coins/:name/" $ saveCoinHandler fix
