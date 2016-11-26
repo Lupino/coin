@@ -34,7 +34,6 @@ executable coin
                      , scotty
                      , aeson
                      , text
-                     , transformers
                      , warp
                      , data-default-class
                      , streaming-commons
