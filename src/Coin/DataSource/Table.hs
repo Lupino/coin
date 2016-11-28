@@ -18,7 +18,7 @@ createCoinTable prefix conn = execute_ conn sql
   where sql = fromString $ concat [ "CREATE TABLE IF NOT EXISTS `", prefix, "_coins` ("
                                   , "  `name` varchar(128) NOT NULL,"
                                   , "  `score` int(10) unsigned DEFAULT '0',"
-                                  , "  PRIMARY KEY (`name`),"
+                                  , "  PRIMARY KEY (`name`)"
                                   , ") ENGINE=InnoDB DEFAULT CHARSET=utf8"
                                   ]
 
