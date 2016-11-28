@@ -9,7 +9,7 @@ module Coin.DataSource.Coin
   ) where
 
 import           Database.MySQL.Simple  (Connection, Only (..), execute,
-                                         insertID, query)
+                                         insertID, query, withTransaction)
 
 import           Control.Monad          (void)
 import           Control.Monad.IO.Class (liftIO)
@@ -67,7 +67,7 @@ saveCoin' name coin prefix conn = execute conn sql (name, show tp, sc, psc, desc
         ct   = getCoinCreatedAt coin
 
 saveCoin :: String -> Coin -> TablePrefix -> Connection -> IO Score
-saveCoin name coin prefix conn = do
+saveCoin name coin prefix conn = withTransaction conn $ do
   coin' <- prepareSaveCoin name coin prefix conn
   changed <- saveCoin' name coin' prefix conn
   if changed > 0 then saveScore name tp sc prefix conn
