@@ -32,6 +32,7 @@ library
                      , scotty
                      , haxl
                      , async
+                     , dispatch-common
   default-language:    Haskell2010
 
 executable coin
