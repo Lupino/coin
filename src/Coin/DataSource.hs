@@ -68,16 +68,16 @@ instance DataSourceName CoinReq where
   dataSourceName _ = "CoinDataSource"
 
 instance DataSource UserEnv CoinReq where
-  fetch = dispatchFetch
+  fetch = doFetch
 
-dispatchFetch
+doFetch
   :: State CoinReq
   -> Flags
   -> UserEnv
   -> [BlockedFetch CoinReq]
   -> PerformFetch
 
-dispatchFetch _state _flags _user blockedFetches = AsyncFetch $ \inner -> do
+doFetch _state _flags _user blockedFetches = AsyncFetch $ \inner -> do
   sem <- newQSem $ numThreads _state
   asyncs <- mapM (fetchAsync sem _user) blockedFetches
   inner
