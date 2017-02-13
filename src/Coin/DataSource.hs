@@ -27,6 +27,7 @@ import           Coin.Types
 import           Coin.UserEnv             (UserEnv (..))
 
 import qualified Control.Exception        (SomeException, bracket_, try)
+import           Data.ByteString          (ByteString)
 import           Data.Int                 (Int64)
 import           Data.Pool                (Pool, withResource)
 import           Database.MySQL.Simple    (Connection)
@@ -42,6 +43,8 @@ data CoinReq a where
   SaveCoin    :: String -> Coin -> CoinReq Score
   GetCoins    :: String -> From -> Size -> CoinReq [Coin]
   CountCoin   :: String -> CoinReq Int64
+  GetInfo     :: String -> CoinReq ByteString
+  SetInfo     :: String -> ByteString -> CoinReq ()
 
   deriving (Typeable)
 
@@ -52,6 +55,8 @@ instance Hashable (CoinReq a) where
   hashWithSalt s (SaveCoin n c)    = hashWithSalt s (2::Int, n, c)
   hashWithSalt s (GetCoins n f si) = hashWithSalt s (3::Int, n, f, si)
   hashWithSalt s (CountCoin n)     = hashWithSalt s (4::Int, n)
+  hashWithSalt s (GetInfo n)       = hashWithSalt s (5::Int, n)
+  hashWithSalt s (SetInfo n i)     = hashWithSalt s (6::Int, n, i)
 
 deriving instance Show (CoinReq a)
 instance Show1 CoinReq where show1 = show
@@ -98,6 +103,8 @@ fetchReq (GetScore n)      = getScore n
 fetchReq (SaveCoin n c)    = saveCoin n c
 fetchReq (GetCoins n f si) = getCoins n f si
 fetchReq (CountCoin n)     = countCoin n
+fetchReq (GetInfo n)       = getInfo n
+fetchReq (SetInfo n i)     = setInfo n i
 
 initCoinState :: Int -> StateStore
 initCoinState threads = stateSet coinState stateEmpty

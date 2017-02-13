@@ -3,6 +3,8 @@
 module Coin.DataSource.Coin
   (
     getScore
+  , getInfo
+  , setInfo
   , saveCoin
   , getCoins
   , countCoin
@@ -14,6 +16,7 @@ import           Database.MySQL.Simple  (Connection, Only (..), execute,
 import           Control.Monad          (void)
 import           Control.Monad.IO.Class (liftIO)
 import           Data.Aeson             (Value (..), encode)
+import           Data.ByteString        (ByteString, empty)
 import           Data.Int               (Int64)
 import           Data.Maybe             (listToMaybe)
 import           Data.String            (fromString)
@@ -24,6 +27,14 @@ import           Coin.Types
 getScore :: String -> TablePrefix -> Connection -> IO Score
 getScore name prefix conn = maybe 0 fromOnly . listToMaybe <$> query conn sql (Only name)
   where sql = fromString $ concat [ "SELECT `score` FROM `", prefix, "_coins` WHERE `name` = ?" ]
+
+getInfo :: String -> TablePrefix -> Connection -> IO ByteString
+getInfo name prefix conn = maybe empty fromOnly . listToMaybe <$> query conn sql (Only name)
+  where sql = fromString $ concat [ "SELECT `info` FROM `", prefix, "_coins` WHERE `name` = ?" ]
+
+setInfo :: String -> ByteString -> TablePrefix -> Connection -> IO ()
+setInfo name info prefix conn = void $ execute conn sql (name, info)
+  where sql = fromString $ concat [ "REPLACE INTO `", prefix, "_coins` (`name`, `info`) VALUES (?, ?)" ]
 
 saveScore :: String -> CoinType -> Score -> TablePrefix -> Connection -> IO Score
 saveScore name tp sc prefix conn = do

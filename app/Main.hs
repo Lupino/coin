@@ -11,15 +11,19 @@ import           Database.MySQL.Simple                (ConnectInfo (..), close,
                                                        defaultConnectInfo)
 
 import           Control.Monad.Reader                 (lift)
-import           Data.Aeson                           (object, (.=))
+import           Data.Aeson                           (Value, decode, object,
+                                                       (.=))
+import qualified Data.ByteString.Lazy                 as LB (empty)
 import           Data.Default.Class                   (def)
 import           Data.Streaming.Network.Internal      (HostPreference (Host))
+import           Network.HTTP.Types                   (status204, status400)
 import           Network.Wai.Handler.Warp             (setHost, setPort)
 import           Network.Wai.Middleware.RequestLogger (logStdout)
 import           Web.Scotty.Trans                     (ActionT, ScottyT, body,
                                                        get, json, middleware,
-                                                       param, post, rescue,
-                                                       scottyOptsT, settings)
+                                                       param, post, put, raw,
+                                                       rescue, scottyOptsT,
+                                                       settings, status)
 
 import           Coin
 import           Control.Monad                        (when)
@@ -111,15 +115,35 @@ application :: ScottyM ()
 application = do
   middleware logStdout
 
-  get "/api/coins/:name/score/" $ getScoreHandler
-  get "/api/coins/:name/" $ getCoinListHandler
-  post "/api/coins/:name/" $ saveCoinHandler
+  get  "/api/coins/:name/score/" $ getScoreHandler
+  get  "/api/coins/:name/info/"  $ getInfoHandler
+  put  "/api/coins/:name/info/"  $ setInfoHandler
+  get  "/api/coins/:name/"       $ getCoinListHandler
+  post "/api/coins/:name/"       $ saveCoinHandler
 
 getScoreHandler :: ActionM ()
 getScoreHandler = do
   name <- param "name"
   score <- lift $ getScore name
   json $ object [ "score" .= score ]
+
+getInfoHandler :: ActionM ()
+getInfoHandler = do
+  name  <- param "name"
+  info  <- lift $ getInfo name
+  score <- lift $ getScore name
+  json $ object [ "score" .= score, "info" .= info, "name" .= name ]
+
+setInfoHandler :: ActionM ()
+setInfoHandler = do
+  name  <- param "name"
+  wb <- body
+  case (decode wb :: Maybe Value) of
+    Nothing -> status status400 >> raw LB.empty
+    Just v -> do
+      lift $ setInfo name v
+      status status204
+      raw LB.empty
 
 getCoinListHandler :: ActionM ()
 getCoinListHandler = do

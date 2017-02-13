@@ -33,6 +33,7 @@ library
                      , haxl
                      , async
                      , dispatch-common
+                     , bytestring
   default-language:    Haskell2010
 
 executable coin
@@ -54,6 +55,8 @@ executable coin
                      , haxl
                      , yaml-config
                      , mysql-simple
+                     , bytestring
+                     , http-types
   default-language:    Haskell2010
 
 test-suite coin-test

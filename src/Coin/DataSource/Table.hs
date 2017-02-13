@@ -17,6 +17,7 @@ createCoinTable :: TablePrefix -> Connection -> IO Int64
 createCoinTable prefix conn = execute_ conn sql
   where sql = fromString $ concat [ "CREATE TABLE IF NOT EXISTS `", prefix, "_coins` ("
                                   , "  `name` varchar(128) NOT NULL,"
+                                  , "  `info` varchar(1500) DEFAULT '',"
                                   , "  `score` int(10) unsigned DEFAULT '0',"
                                   , "  PRIMARY KEY (`name`)"
                                   , ") ENGINE=InnoDB DEFAULT CHARSET=utf8"
