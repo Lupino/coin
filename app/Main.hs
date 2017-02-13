@@ -68,7 +68,7 @@ main = execParser opts >>= program
     opts = info (helper <*> parser)
       ( fullDesc
      <> progDesc "Coin micro server"
-     <> header "dispatch-user - Coin micro server" )
+     <> header "coin - Coin micro server" )
 
 program :: Options -> IO ()
 program opts = do
