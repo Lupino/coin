@@ -33,8 +33,13 @@ getInfo name prefix conn = maybe empty fromOnly . listToMaybe <$> query conn sql
   where sql = fromString $ concat [ "SELECT `info` FROM `", prefix, "_coins` WHERE `name` = ?" ]
 
 setInfo :: String -> ByteString -> TablePrefix -> Connection -> IO ()
-setInfo name info prefix conn = void $ execute conn sql (name, info)
-  where sql = fromString $ concat [ "REPLACE INTO `", prefix, "_coins` (`name`, `info`) VALUES (?, ?)" ]
+setInfo name info prefix conn = do
+  changed <- execute conn sql (info, name)
+  if changed > 0 then return ()
+                 else void $ execute conn insertSQL (name, info)
+
+  where sql = fromString $ concat [ "UPDATE `", prefix, "_coins` SET `info` = ? WHERE `name` = ?" ]
+        insertSQL = fromString $ concat [ "INSERT INTO `", prefix, "_coins` (`name`, `info`) VALUES (?, ?)" ]
 
 saveScore :: String -> CoinType -> Score -> TablePrefix -> Connection -> IO Score
 saveScore name tp sc prefix conn = do
