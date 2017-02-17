@@ -5,11 +5,6 @@ module Main
     main
   ) where
 
-import           Data.Pool                            (createPool)
-import           Database.MySQL.Simple                (ConnectInfo (..), close,
-                                                       connect,
-                                                       defaultConnectInfo)
-
 import           Control.Monad.Reader                 (lift)
 import           Data.Aeson                           (Value, decode, object,
                                                        (.=))
@@ -31,8 +26,10 @@ import           Haxl.Core                            (StateStore, initEnv,
                                                        runHaxl)
 
 import           Data.Text.Lazy                       as LT (pack)
-import           Data.Yaml.Config                     as Y (load, lookupDefault,
-                                                            subconfig)
+
+import qualified Coin.Config                          as C
+import qualified Data.Yaml                            as Y
+
 import           Options.Applicative
 
 data Options = Options { getConfigFile  :: String
@@ -72,33 +69,21 @@ main = execParser opts >>= program
 
 program :: Options -> IO ()
 program opts = do
-  yamlConfig <- load $ getConfigFile opts
-  mysqlConfig <- subconfig "mysql" yamlConfig
+  (Just conf) <- Y.decodeFile (getConfigFile opts) :: IO (Maybe C.Config)
+
   let serverHost   = getHost opts
       serverPort   = getPort opts
-      dbName       = Y.lookupDefault "db" "dispatch_user" mysqlConfig
-      dbHost       = Y.lookupDefault "host" "127.0.0.1" mysqlConfig
-      dbPort       = Y.lookupDefault "port" 3306 mysqlConfig
-      dbUser       = Y.lookupDefault "user" "root" mysqlConfig
-      dbPass       = Y.lookupDefault "pass" "" mysqlConfig
-      numStripes   = Y.lookupDefault "numStripes" 1 mysqlConfig
-      idleTime     = Y.lookupDefault "idleTime" 0.5 mysqlConfig
-      maxResources = Y.lookupDefault "maxResources" 1 mysqlConfig
-      numThreads   = Y.lookupDefault "numThreads" 1 mysqlConfig
+
+      mysqlConfig  = C.mysqlConfig conf
+      mysqlThreads = C.mysqlHaxlNumThreads mysqlConfig
+
       tablePrefix  = getTablePrefix opts
 
-  let conn = connect defaultConnectInfo { connectDatabase = dbName
-                                        , connectHost = dbHost
-                                        , connectPort = dbPort
-                                        , connectUser = dbUser
-                                        , connectPassword = dbPass
-                                        }
+  mySQLPool <- C.genMySQLPool mysqlConfig
 
-  pool <- createPool conn close numStripes idleTime maxResources
+  let state = initCoinState mysqlThreads
 
-  let state = initCoinState numThreads
-
-  let userEnv = UserEnv { mySQLPool = pool, tablePrefix = tablePrefix }
+  let userEnv = UserEnv { mySQLPool = mySQLPool, tablePrefix = tablePrefix }
 
   let opts = def { settings = setPort serverPort
                             $ setHost (Host serverHost) (settings def) }
