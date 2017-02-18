@@ -16,9 +16,9 @@ import           Data.Hashable            (Hashable (..))
 import           Data.Typeable            (Typeable)
 import           Haxl.Core                (BlockedFetch (..), DataSource,
                                            DataSourceName, Flags,
-                                           PerformFetch (..), Show1, State,
+                                           PerformFetch (..), ShowP, State,
                                            StateKey, StateStore, dataSourceName,
-                                           fetch, putFailure, putSuccess, show1,
+                                           fetch, putFailure, putSuccess, showp,
                                            stateEmpty, stateSet)
 
 import           Coin.DataSource.Coin
@@ -59,7 +59,7 @@ instance Hashable (CoinReq a) where
   hashWithSalt s (SetInfo n i)     = hashWithSalt s (6::Int, n, i)
 
 deriving instance Show (CoinReq a)
-instance Show1 CoinReq where show1 = show
+instance ShowP CoinReq where showp = show
 
 instance StateKey CoinReq where
   data State CoinReq = CoinState { numThreads :: Int }

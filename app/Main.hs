@@ -30,6 +30,7 @@ import           Data.Text.Lazy                       as LT (pack)
 import qualified Coin.Config                          as C
 import qualified Data.Yaml                            as Y
 
+import           Data.Semigroup                       ((<>))
 import           Options.Applicative
 
 data Options = Options { getConfigFile  :: String
