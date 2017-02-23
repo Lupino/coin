@@ -5,11 +5,13 @@ module Main
     main
   ) where
 
+import           Coin.GraphQL                         (schema)
 import           Control.Monad.Reader                 (lift)
 import           Data.Aeson                           (Value, decode, object,
                                                        (.=))
 import qualified Data.ByteString.Lazy                 as LB (empty)
 import           Data.Default.Class                   (def)
+import           Data.GraphQL                         (graphql)
 import           Data.Streaming.Network.Internal      (HostPreference (Host))
 import           Network.HTTP.Types                   (status204, status400)
 import           Network.Wai.Handler.Warp             (setHost, setPort)
@@ -106,6 +108,7 @@ application = do
   put  "/api/coins/:name/info/"  $ setInfoHandler
   get  "/api/coins/:name/"       $ getCoinListHandler
   post "/api/coins/:name/"       $ saveCoinHandler
+  post "/api/graphql/"           $ graphqlHandler
 
 getScoreHandler :: ActionM ()
 getScoreHandler = do
@@ -169,3 +172,9 @@ saveCoinHandler = do
         readType "INCR" = Just Incr
         readType "DECR" = Just Decr
         readType _      = Nothing
+
+graphqlHandler :: ActionM ()
+graphqlHandler = do
+  query <- param "query"
+  ret <- lift $ graphql schema query
+  json ret

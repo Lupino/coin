@@ -23,6 +23,7 @@ library
                      , Coin.API
                      , Coin.UserEnv
                      , Coin.Config
+                     , Coin.GraphQL
   build-depends:       base >= 4.7 && < 5
                      , aeson
                      , unix-time
@@ -37,6 +38,8 @@ library
                      , bytestring
 
                      , time
+
+                     , graphql
   default-language:    Haskell2010
 
 executable coin
@@ -58,6 +61,7 @@ executable coin
                      , yaml
                      , bytestring
                      , http-types
+                     , graphql
   default-language:    Haskell2010
 
 test-suite coin-test
