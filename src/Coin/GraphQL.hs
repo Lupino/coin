@@ -11,28 +11,22 @@ import           Coin.Types
 import           Coin.UserEnv        (CoinM)
 import           Control.Applicative (Alternative (..))
 import           Control.Exception   (SomeException)
-import           Data.Aeson          (Value (..))
+import           Data.Aeson          as A (Value (..))
 import           Data.GraphQL.AST    (Name)
 import           Data.GraphQL.Schema (Argument (..), Resolver, Schema (..),
-                                      Value (..), arrayA', scalar, scalarA)
+                                      Value (..), arrayA', object, objectA',
+                                      scalar, scalarA)
+import qualified Data.HashMap.Strict as HM (toList)
 import           Data.Int            (Int32)
 import           Data.Maybe          (fromMaybe)
 import           Data.String         (fromString)
 import           Data.Text           (Text, unpack)
-import           Haxl.Core           (CriticalError (..), GenHaxl, catch, throw)
-import           Haxl.Core.Monad     (unsafeLiftIO)
-import           Prelude             hiding (catch, empty)
-
-catchAny
-  :: GenHaxl u a   -- ^ run this first
-  -> GenHaxl u a   -- ^ if it throws 'LogicError' or 'TransientError', run this
-  -> GenHaxl u a
-catchAny haxl handler =
-  haxl `catch` \(e :: SomeException) -> handler
+import           Haxl.Core           (GenHaxl, throw)
+import           Haxl.Prelude        (NotFound (..), catchAny)
 
 instance Alternative (GenHaxl u) where
   a <|> b = catchAny a b
-  empty = throw $ CriticalError "mzero"
+  empty = throw $ NotFound "mzero"
 
 schema :: Schema CoinM
 schema = Schema [info, score, coins, total]
@@ -41,13 +35,13 @@ score :: Resolver CoinM
 score = scalarA "score" $ \case
   (Argument "name" (ValueString name):_) -> getScore $ unpack name
   (Argument "name" (ValueEnum name):_)   -> getScore $ unpack name
-  _ -> return 0
+  _ -> empty
 
 info :: Resolver CoinM
-info = scalarA "info" $ \case
-  (Argument "name" (ValueString name):_) -> getInfo $ unpack name
-  (Argument "name" (ValueEnum name):_)   -> getInfo $ unpack name
-  _ -> return Null
+info = objectA' "info" $ \case
+  (Argument "name" (ValueString name):_) -> value' <$> getInfo (unpack name)
+  (Argument "name" (ValueEnum name):_)   -> value' <$> getInfo (unpack name)
+  _ -> empty
 
 getInt :: Name -> [Argument] -> Maybe Int32
 getInt _ []                           = Nothing
@@ -89,3 +83,15 @@ coin c = [ scalar "score" $ getCoinScore c
          , scalar "desc" $ getCoinDesc c
          , scalar "created_at" $ getCoinCreatedAt c
          ]
+
+value :: Alternative f => Name -> A.Value -> Resolver f
+value k (A.Object v) = object k . listToResolver $ HM.toList v
+value k v            = scalar k v
+
+value' :: Alternative f => A.Value -> [Resolver f]
+value' (A.Object v) = listToResolver $ HM.toList v
+value' _            = []
+
+listToResolver :: Alternative f => [(Text, A.Value)] -> [Resolver f]
+listToResolver []          = []
+listToResolver ((k, v):xs) = value k v : listToResolver xs
