@@ -2,17 +2,17 @@
 # For more information, see: http://docs.haskellstack.org/en/stable/yaml_configuration/
 
 # Specifies the GHC version and set of packages available (e.g., lts-3.5, nightly-2015-09-21, ghc-7.10.2)
-resolver: lts-7.10
+resolver: lts-8.0
 
 # Local packages, usually specified by relative directory name
 packages:
 - '.'
+- location:
+    git: https://github.com/Lupino/graphql-haskell.git
+    commit: 3be86bf69e0825c2df65862479d663b08f60e8ce
+  extra-dep: true
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
-extra-deps:
-- mysql-simple-0.4.0.0
-- mysql-0.1.4
-- haxl-0.4.0.2
-- yaml-config-0.4.0
+# extra-deps:
 
 # Override default flag values for local packages and extra-deps
 flags: {}
@@ -21,7 +21,7 @@ flags: {}
 extra-package-dbs: []
 
 # Control whether we use the GHC we find on the path
-# system-ghc: true
+system-ghc: true
 
 # Require a specific version of stack, using version ranges
 # require-stack-version: -any # Default

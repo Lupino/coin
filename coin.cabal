@@ -34,7 +34,6 @@ library
                      , scotty
                      , haxl
                      , async
-                     , dispatch-common
                      , bytestring
 
                      , time
