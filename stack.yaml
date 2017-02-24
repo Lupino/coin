@@ -8,6 +8,10 @@ resolver: lts-8.0
 packages:
 - '.'
 - location:
+    git: https://github.com/Lupino/dispatch-common.git
+    commit: 7cad70c003cf2a87f1dec5fcc30d9f7218f0fd36
+  extra-dep: true
+- location:
     git: https://github.com/Lupino/graphql-haskell.git
     commit: 3be86bf69e0825c2df65862479d663b08f60e8ce
   extra-dep: true
@@ -15,7 +19,9 @@ packages:
 # extra-deps:
 
 # Override default flag values for local packages and extra-deps
-flags: {}
+flags:
+  dispatch-common:
+    graphql-utils: true
 
 # Extra package databases containing global packages
 extra-package-dbs: []
