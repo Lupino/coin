@@ -1,6 +1,6 @@
 name:                coin
 version:             0.1.0.0
-synopsis:            Initial project template from stack
+synopsis:            A micro server of coin for website
 description:         Please see README.md
 homepage:            http://github.com/Lupino/coin#readme
 license:             BSD3
