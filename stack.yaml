@@ -22,6 +22,7 @@ packages:
 flags:
   dispatch-common:
     graphql-utils: true
+    mysql-config: true
 
 # Extra package databases containing global packages
 extra-package-dbs: []
