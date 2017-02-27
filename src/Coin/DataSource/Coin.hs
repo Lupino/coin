@@ -15,7 +15,6 @@ import           Database.MySQL.Simple  (Connection, Only (..), execute,
 
 import           Control.Monad          (void)
 import           Control.Monad.IO.Class (liftIO)
-import           Data.Aeson             (Value (..), encode)
 import           Data.ByteString        (ByteString, empty)
 import           Data.Int               (Int64)
 import           Data.Maybe             (listToMaybe)

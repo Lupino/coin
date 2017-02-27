@@ -16,14 +16,13 @@ import           Data.Streaming.Network.Internal      (HostPreference (Host))
 import           Network.HTTP.Types                   (status204, status400)
 import           Network.Wai.Handler.Warp             (setHost, setPort)
 import           Network.Wai.Middleware.RequestLogger (logStdout)
-import           Web.Scotty.Trans                     (ActionT, ScottyT, body,
-                                                       get, json, middleware,
-                                                       param, post, put, raw,
-                                                       rescue, scottyOptsT,
-                                                       settings, status)
+import           Web.Scotty.Trans                     (body, get, json,
+                                                       middleware, param, post,
+                                                       put, raw, rescue,
+                                                       scottyOptsT, settings,
+                                                       status)
 
 import           Coin
-import           Control.Monad                        (when)
 import           Haxl.Core                            (StateStore, initEnv,
                                                        runHaxl)
 
@@ -71,25 +70,24 @@ main = execParser opts >>= program
      <> header "coin - Coin micro server" )
 
 program :: Options -> IO ()
-program opts = do
-  (Just conf) <- Y.decodeFile (getConfigFile opts) :: IO (Maybe C.Config)
+program Options { getConfigFile = confFile
+                , getHost = host
+                , getPort = port
+                , getTablePrefix = prefix
+                } = do
+  (Just conf) <- Y.decodeFile confFile :: IO (Maybe C.Config)
 
-  let serverHost   = getHost opts
-      serverPort   = getPort opts
-
-      mysqlConfig  = C.mysqlConfig conf
+  let mysqlConfig  = C.mysqlConfig conf
       mysqlThreads = C.mysqlHaxlNumThreads mysqlConfig
 
-      tablePrefix  = getTablePrefix opts
-
-  mySQLPool <- C.genMySQLPool mysqlConfig
+  pool <- C.genMySQLPool mysqlConfig
 
   let state = initCoinState mysqlThreads
 
-  let userEnv = UserEnv { mySQLPool = mySQLPool, tablePrefix = tablePrefix }
+  let userEnv = UserEnv { mySQLPool = pool, tablePrefix = prefix }
 
-  let opts = def { settings = setPort serverPort
-                            $ setHost (Host serverHost) (settings def) }
+  let opts = def { settings = setPort port
+                            $ setHost (Host host) (settings def) }
 
   _ <- runIO userEnv state createTable
   scottyOptsT opts (runIO userEnv state) application
@@ -119,9 +117,9 @@ getScoreHandler = do
 getInfoHandler :: ActionM ()
 getInfoHandler = do
   name  <- param "name"
-  info  <- lift $ getInfo name
+  inf  <- lift $ getInfo name
   score <- lift $ getScore name
-  json $ object [ "score" .= score, "info" .= info, "name" .= name ]
+  json $ object [ "score" .= score, "info" .= inf, "name" .= name ]
 
 setInfoHandler :: ActionM ()
 setInfoHandler = do

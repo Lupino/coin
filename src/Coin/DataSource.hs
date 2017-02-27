@@ -29,7 +29,7 @@ import           Coin.UserEnv             (UserEnv (..))
 import qualified Control.Exception        (SomeException, bracket_, try)
 import           Data.ByteString          (ByteString)
 import           Data.Int                 (Int64)
-import           Data.Pool                (Pool, withResource)
+import           Data.Pool                (withResource)
 import           Database.MySQL.Simple    (Connection)
 
 import           Control.Concurrent.Async
