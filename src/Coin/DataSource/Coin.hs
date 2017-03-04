@@ -31,26 +31,36 @@ getInfo :: String -> TablePrefix -> Connection -> IO ByteString
 getInfo name prefix conn = maybe empty fromOnly . listToMaybe <$> query conn sql (Only name)
   where sql = fromString $ concat [ "SELECT `info` FROM `", prefix, "_coins` WHERE `name` = ?" ]
 
+hasCoin :: String -> TablePrefix -> Connection -> IO Bool
+hasCoin name prefix conn = exists <$> query conn sql (Only name)
+  where sql = fromString $ concat [ "SELECT `score` FROM `", prefix, "_coins` WHERE `name` = ?" ]
+        exists :: [Only Score] -> Bool
+        exists (_:[]) = True
+        exists [] = False
+
 setInfo :: String -> ByteString -> TablePrefix -> Connection -> IO ()
 setInfo name info prefix conn = do
-  changed <- execute conn sql (info, name)
-  if changed > 0 then return ()
-                 else void $ execute conn insertSQL (name, info)
+  exists <- hasCoin name prefix conn
+  if exists then void $ execute conn sql (info, name)
+            else void $ execute conn insertSQL (name, info)
 
   where sql = fromString $ concat [ "UPDATE `", prefix, "_coins` SET `info` = ? WHERE `name` = ?" ]
         insertSQL = fromString $ concat [ "INSERT INTO `", prefix, "_coins` (`name`, `info`) VALUES (?, ?)" ]
 
 saveScore :: String -> CoinType -> Score -> TablePrefix -> Connection -> IO Score
 saveScore name tp sc prefix conn = do
-  changed <- execute conn sql (Only name)
-  if changed > 0 then fromIntegral <$> insertID conn
-                 else do
-                   void $ execute conn insertSQL (name, 0 :: Score)
-                   saveScore name tp sc prefix conn
+  exists <- hasCoin name prefix conn
+  if exists then do
+              void $ execute conn sql (Only name)
+              fromIntegral <$> insertID conn
+            else do
+              void $ execute conn insertSQL (name, 0 :: Score)
+              saveScore name tp sc prefix conn
   where sql = fromString $ concat [ "UPDATE `", prefix, "_coins`"
                                   , " SET `score`=LAST_INSERT_ID(`score` ", getOp tp, show sc,  ")"
                                   , " WHERE `name` = ?"
                                   ]
+
         getOp :: CoinType -> String
         getOp Incr = "+"
         getOp Decr = "-"
