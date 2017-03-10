@@ -10,52 +10,69 @@ import           Coin.API
 import           Coin.Types
 import           Coin.UserEnv           (CoinM)
 import           Control.Applicative    (empty)
+import           Data.GraphQL.AST       (Name)
 import           Data.GraphQL.Schema    (Argument (..), Resolver, Schema,
-                                         Value (..), arrayA', objectA', scalar,
-                                         scalarA)
+                                         Value (..), arrayA', object', objectA,
+                                         scalar, scalarA)
 import           Data.List.NonEmpty     (NonEmpty ((:|)))
 import           Data.Maybe             (catMaybes, fromMaybe)
 import           Data.Text              (unpack)
 
 import           Dispatch.Utils.GraphQL (getEnumValue, getIntValue,
                                          getTextValue, value')
+-- type Query {
+--   coin(name: String!): Coin
+-- }
+-- type Coin {
+--   history(from: Int, size: Int): [CoinHistory]
+--   total: Int
+--   score: Int
+--   info: CoinInfo
+-- }
+-- type CoinHistory {
+--   score: Int
+--   pre_score: Int
+--   type: String
+--   desc: String
+--   created_at: Int
+-- }
+-- type CoinInfo {
+--
+-- }
 
 schema :: Schema CoinM
-schema = info :| [score, coins, total]
+schema = coin_ :| []
 
-score :: Resolver CoinM
-score = scalarA "score" $ \case
-  (Argument "name" (ValueString name):_) -> getScore $ unpack name
-  (Argument "name" (ValueEnum name):_)   -> getScore $ unpack name
-  _ -> empty
+coin_ :: Resolver CoinM
+coin_ = objectA "coin" $ \argv -> do
+  case getTextValue "name" argv of
+    Nothing   -> empty
+    Just name -> coin__ $ unpack name
 
-info :: Resolver CoinM
-info = objectA' "info" $ \case
-  (Argument "name" (ValueString name):_) -> value' <$> getInfo (unpack name)
-  (Argument "name" (ValueEnum name):_)   -> value' <$> getInfo (unpack name)
-  _ -> empty
+ where coin__ :: String -> [Resolver CoinM]
+       coin__ n = [ score "score"   n
+                  , info  "info"    n
+                  , coins "history" n
+                  , total "total"   n
+                  ]
 
+score :: Name -> String -> Resolver CoinM
+score n name = scalarA n . const $ getScore name
 
-coins :: Resolver CoinM
-coins = arrayA' "coins" $ \ argv -> do
-  let name = catMaybes [ getTextValue "name" argv
-                       , getEnumValue "name" argv
-                       ]
-
-  case name of
-    [] -> empty
-    (n:_) -> do
-      let from = fromMaybe 0  $ getIntValue "from" argv
-          size = fromMaybe 10 $ getIntValue "size" argv
-
-      map coin <$> getCoins (unpack n) from size
+info :: Name -> String -> Resolver CoinM
+info n name = object' n $ value' <$> getInfo name
 
 
-total :: Resolver CoinM
-total = scalarA "total" $ \case
-  (Argument "name" (ValueString name):_) -> countCoin $ unpack name
-  (Argument "name" (ValueEnum name):_)   -> countCoin $ unpack name
-  _ -> return 0
+coins :: Name -> String -> Resolver CoinM
+coins n name = arrayA' n $ \argv -> do
+  let from = fromMaybe 0  $ getIntValue "from" argv
+      size = fromMaybe 10 $ getIntValue "size" argv
+
+  map coin <$> getCoins name from size
+
+
+total :: Name -> String -> Resolver CoinM
+total n name = scalarA n . const $ countCoin name
 
 coin :: Coin -> [Resolver CoinM]
 coin c = [ scalar "score" $ getCoinScore c
