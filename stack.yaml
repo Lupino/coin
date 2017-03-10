@@ -12,8 +12,8 @@ packages:
     commit: 7cad70c003cf2a87f1dec5fcc30d9f7218f0fd36
   extra-dep: true
 - location:
-    git: https://github.com/Lupino/graphql-haskell.git
-    commit: 3be86bf69e0825c2df65862479d663b08f60e8ce
+    git: https://github.com/jdnavarro/graphql-haskell.git
+    commit: 40f9024b51900c73bc0f65444c16022bd73820be
   extra-dep: true
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
 # extra-deps:

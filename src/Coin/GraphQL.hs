@@ -10,9 +10,10 @@ import           Coin.API
 import           Coin.Types
 import           Coin.UserEnv           (CoinM)
 import           Control.Applicative    (empty)
-import           Data.GraphQL.Schema    (Argument (..), Resolver, Schema (..),
+import           Data.GraphQL.Schema    (Argument (..), Resolver, Schema,
                                          Value (..), arrayA', objectA', scalar,
                                          scalarA)
+import           Data.List.NonEmpty     (NonEmpty ((:|)))
 import           Data.Maybe             (catMaybes, fromMaybe)
 import           Data.Text              (unpack)
 
@@ -20,7 +21,7 @@ import           Dispatch.Utils.GraphQL (getEnumValue, getIntValue,
                                          getTextValue, value')
 
 schema :: Schema CoinM
-schema = Schema [info, score, coins, total]
+schema = info :| [score, coins, total]
 
 score :: Resolver CoinM
 score = scalarA "score" $ \case
