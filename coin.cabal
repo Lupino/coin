@@ -63,6 +63,7 @@ executable coin
                      , bytestring
                      , http-types
                      , graphql
+                     , dispatch-common
   default-language:    Haskell2010
 
 test-suite coin-test

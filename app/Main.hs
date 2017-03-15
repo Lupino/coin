@@ -27,6 +27,10 @@ import           Haxl.Core                            (StateStore, initEnv,
                                                        runHaxl)
 
 import           Data.Text.Lazy                       as LT (pack)
+import           Dispatch.Types.ListResult            (ListResult (..))
+import           Dispatch.Utils.Scotty                (errBadRequest, ok,
+                                                       okListResult)
+
 
 import qualified Coin.Config                          as C
 import qualified Data.Yaml                            as Y
@@ -112,7 +116,7 @@ getScoreHandler :: ActionM ()
 getScoreHandler = do
   name <- param "name"
   score <- lift $ getScore name
-  json $ object [ "score" .= score ]
+  ok "score" score
 
 getInfoHandler :: ActionM ()
 getInfoHandler = do
@@ -126,7 +130,7 @@ setInfoHandler = do
   name  <- param "name"
   wb <- body
   case (decode wb :: Maybe Value) of
-    Nothing -> status status400 >> raw LB.empty
+    Nothing -> errBadRequest "Invalid coin info"
     Just v -> do
       lift $ setInfo name v
       status status204
@@ -140,7 +144,11 @@ getCoinListHandler = do
 
   ret <- lift $ getCoins name from size
   total <- lift $ countCoin name
-  json $ object ["total" .= total, "from" .= from, "size" .= size, "coins" .= ret]
+  okListResult "coins" ListResult { getTotal  = total
+                                  , getFrom   = from
+                                  , getSize   = size
+                                  , getResult = ret
+                                  }
 
 saveCoinHandler :: ActionM ()
 saveCoinHandler = do
@@ -159,8 +167,8 @@ saveCoinHandler = do
                                             })
 
 
-      json $ object [ "score" .= ret ]
-    Nothing -> json $ object [ "err" .= pack "Invalid type" ]
+      ok "score" ret
+    Nothing -> errBadRequest "Invalid type"
 
   where readType :: String -> Maybe CoinType
         readType "Incr" = Just Incr

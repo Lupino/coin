@@ -9,7 +9,7 @@ packages:
 - '.'
 - location:
     git: https://github.com/Lupino/dispatch-common.git
-    commit: 7cad70c003cf2a87f1dec5fcc30d9f7218f0fd36
+    commit: 5eaddce781730a58d1ca7cc15479cc964a336df9
   extra-dep: true
 - location:
     git: https://github.com/jdnavarro/graphql-haskell.git
@@ -23,6 +23,7 @@ flags:
   dispatch-common:
     graphql-utils: true
     mysql-config: true
+    scotty-utils: true
 
 # Extra package databases containing global packages
 extra-package-dbs: []
