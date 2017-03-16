@@ -13,7 +13,7 @@ import qualified Data.ByteString.Lazy                 as LB (empty)
 import           Data.Default.Class                   (def)
 import           Data.GraphQL                         (graphql)
 import           Data.Streaming.Network.Internal      (HostPreference (Host))
-import           Network.HTTP.Types                   (status204, status400)
+import           Network.HTTP.Types                   (status204)
 import           Network.Wai.Handler.Warp             (setHost, setPort)
 import           Network.Wai.Middleware.RequestLogger (logStdout)
 import           Web.Scotty.Trans                     (body, get, json,
@@ -26,7 +26,6 @@ import           Coin
 import           Haxl.Core                            (StateStore, initEnv,
                                                        runHaxl)
 
-import           Data.Text.Lazy                       as LT (pack)
 import           Dispatch.Types.ListResult            (ListResult (..))
 import           Dispatch.Utils.Scotty                (errBadRequest, ok,
                                                        okListResult)

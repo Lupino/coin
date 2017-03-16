@@ -35,8 +35,8 @@ hasCoin :: String -> TablePrefix -> Connection -> IO Bool
 hasCoin name prefix conn = exists <$> query conn sql (Only name)
   where sql = fromString $ concat [ "SELECT `score` FROM `", prefix, "_coins` WHERE `name` = ?" ]
         exists :: [Only Score] -> Bool
-        exists (_:[]) = True
-        exists [] = False
+        exists (_:_) = True
+        exists []    = False
 
 setInfo :: String -> ByteString -> TablePrefix -> Connection -> IO ()
 setInfo name info prefix conn = do

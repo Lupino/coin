@@ -11,15 +11,13 @@ import           Coin.Types
 import           Coin.UserEnv           (CoinM)
 import           Control.Applicative    (empty)
 import           Data.GraphQL.AST       (Name)
-import           Data.GraphQL.Schema    (Argument (..), Resolver, Schema,
-                                         Value (..), arrayA', object', objectA,
-                                         scalar, scalarA)
+import           Data.GraphQL.Schema    (Resolver, Schema, arrayA', object',
+                                         objectA, scalar, scalarA)
 import           Data.List.NonEmpty     (NonEmpty ((:|)))
-import           Data.Maybe             (catMaybes, fromMaybe)
+import           Data.Maybe             (fromMaybe)
 import           Data.Text              (unpack)
 
-import           Dispatch.Utils.GraphQL (getEnumValue, getIntValue,
-                                         getTextValue, value')
+import           Dispatch.Utils.GraphQL (getIntValue, getTextValue, value')
 -- type Query {
 --   coin(name: String!): Coin
 -- }
