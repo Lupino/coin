@@ -26,8 +26,8 @@ import           Coin
 import           Haxl.Core                            (StateStore, initEnv,
                                                        runHaxl)
 
-import           Dispatch.Types.ListResult            (ListResult (..))
-import           Dispatch.Utils.Scotty                (errBadRequest, ok,
+import           Yuntan.Types.ListResult              (ListResult (..))
+import           Yuntan.Utils.Scotty                  (errBadRequest, ok,
                                                        okListResult)
 
 
