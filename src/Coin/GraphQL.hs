@@ -4,6 +4,7 @@
 module Coin.GraphQL
   (
     schema
+  , schemaByUser
   ) where
 
 import           Coin.API
@@ -13,7 +14,7 @@ import           Control.Applicative  (empty)
 import           Data.GraphQL.AST     (Name)
 import           Data.GraphQL.Schema  (Resolver, Schema, arrayA', object',
                                        objectA, scalar, scalarA)
-import           Data.List.NonEmpty   (NonEmpty ((:|)))
+import           Data.List.NonEmpty   (NonEmpty ((:|)), fromList)
 import           Data.Maybe           (fromMaybe)
 import           Data.Text            (unpack)
 
@@ -41,18 +42,21 @@ import           Yuntan.Utils.GraphQL (getIntValue, getTextValue, value')
 schema :: Schema CoinM
 schema = coin_ :| []
 
+schemaByUser :: String -> Schema CoinM
+schemaByUser n = fromList (coin__ n)
+
 coin_ :: Resolver CoinM
 coin_ = objectA "coin" $ \argv -> do
   case getTextValue "name" argv of
     Nothing   -> empty
     Just name -> coin__ $ unpack name
 
- where coin__ :: String -> [Resolver CoinM]
-       coin__ n = [ score "score"   n
-                  , info  "info"    n
-                  , coins "history" n
-                  , total "total"   n
-                  ]
+coin__ :: String -> [Resolver CoinM]
+coin__ n = [ score "score"   n
+           , info  "info"    n
+           , coins "history" n
+           , total "total"   n
+           ]
 
 score :: Name -> String -> Resolver CoinM
 score n name = scalarA n . const $ getScore name

@@ -5,7 +5,7 @@ module Main
     main
   ) where
 
-import           Coin.GraphQL                         (schema)
+import           Coin.GraphQL                         (schema, schemaByUser)
 import           Control.Monad.Reader                 (lift)
 import           Data.Aeson                           (Value, decode, object,
                                                        (.=))
@@ -110,6 +110,7 @@ application = do
   get  "/api/coins/:name/"       $ getCoinListHandler
   post "/api/coins/:name/"       $ saveCoinHandler
   post "/api/graphql/"           $ graphqlHandler
+  post "/api/graphql/:name/"     $ graphqlByUserHandler
 
 getScoreHandler :: ActionM ()
 getScoreHandler = do
@@ -182,4 +183,11 @@ graphqlHandler :: ActionM ()
 graphqlHandler = do
   query <- param "query"
   ret <- lift $ graphql schema query
+  json ret
+
+graphqlByUserHandler :: ActionM ()
+graphqlByUserHandler = do
+  query <- param "query"
+  name  <- param "name"
+  ret <- lift $ graphql (schemaByUser name) query
   json ret
