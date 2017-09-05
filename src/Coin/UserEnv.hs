@@ -15,12 +15,16 @@ import           Database.MySQL.Simple  (Connection)
 
 import           Haxl.Core              (GenHaxl)
 import           Haxl.Core.Monad        (unsafeLiftIO)
-
 import           Web.Scotty.Trans       (ActionT, ScottyT)
+import qualified Yuntan.Types.HasMySQL  as H
 
 data UserEnv = UserEnv { mySQLPool   :: Pool Connection
                        , tablePrefix :: String
                        }
+
+instance H.HasMySQL UserEnv where
+  mysqlPool = mySQLPool
+  tablePrefix = tablePrefix
 
 type CoinM = GenHaxl UserEnv
 

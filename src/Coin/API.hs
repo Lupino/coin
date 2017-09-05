@@ -9,23 +9,23 @@ module Coin.API
   , createTable
   ) where
 
-import           Data.Aeson           (Value (..), decodeStrict, encode)
-import           Data.ByteString.Lazy (toStrict)
-import           Data.Int             (Int64)
-import           Data.Maybe           (fromMaybe)
-import           Haxl.Core            (dataFetch, uncachedRequest)
+import           Data.Aeson            (Value (..), decodeStrict, encode)
+import           Data.ByteString.Lazy  (toStrict)
+import           Data.Int              (Int64)
+import           Data.Maybe            (fromMaybe)
+import           Haxl.Core             (GenHaxl, dataFetch, uncachedRequest)
 
 import           Coin.DataSource
 import           Coin.Types
-import           Coin.UserEnv         (CoinM)
+import           Yuntan.Types.HasMySQL (HasMySQL)
 
-getScore    :: String -> CoinM Score
-getInfo     :: String -> CoinM Value
-setInfo     :: String -> Value -> CoinM ()
-saveCoin    :: String -> Coin -> CoinM Score
-getCoins    :: String -> From -> Size -> CoinM [Coin]
-countCoin   :: String -> CoinM Int64
-createTable :: CoinM Int64
+getScore    :: HasMySQL u => String -> GenHaxl u Score
+getInfo     :: HasMySQL u => String -> GenHaxl u Value
+setInfo     :: HasMySQL u => String -> Value -> GenHaxl u ()
+saveCoin    :: HasMySQL u => String -> Coin -> GenHaxl u Score
+getCoins    :: HasMySQL u => String -> From -> Size -> GenHaxl u [Coin]
+countCoin   :: HasMySQL u => String -> GenHaxl u Int64
+createTable :: HasMySQL u => GenHaxl u Int64
 
 getScore n      = uncachedRequest (GetScore n)
 getInfo n       = fromMaybe Null . decodeStrict <$> dataFetch (GetInfo n)

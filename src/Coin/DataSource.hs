@@ -24,7 +24,7 @@ import           Haxl.Core                (BlockedFetch (..), DataSource,
 import           Coin.DataSource.Coin
 import           Coin.DataSource.Table
 import           Coin.Types
-import           Coin.UserEnv             (UserEnv (..))
+import           Yuntan.Types.HasMySQL    (HasMySQL, mysqlPool, tablePrefix)
 
 import qualified Control.Exception        (SomeException, bracket_, try)
 import           Data.ByteString          (ByteString)
@@ -67,13 +67,14 @@ instance StateKey CoinReq where
 instance DataSourceName CoinReq where
   dataSourceName _ = "CoinDataSource"
 
-instance DataSource UserEnv CoinReq where
+instance HasMySQL u => DataSource u CoinReq where
   fetch = doFetch
 
 doFetch
-  :: State CoinReq
+  :: HasMySQL u
+  => State CoinReq
   -> Flags
-  -> UserEnv
+  -> u
   -> [BlockedFetch CoinReq]
   -> PerformFetch
 
@@ -83,11 +84,11 @@ doFetch _state _flags _user blockedFetches = AsyncFetch $ \inner -> do
   inner
   mapM_ wait asyncs
 
-fetchAsync :: QSem -> UserEnv -> BlockedFetch CoinReq -> IO (Async ())
+fetchAsync :: HasMySQL u => QSem -> u -> BlockedFetch CoinReq -> IO (Async ())
 fetchAsync sem env req = async $
   Control.Exception.bracket_ (waitQSem sem) (signalQSem sem) $ withResource pool $ fetchSync req prefix
 
-  where pool   = mySQLPool env
+  where pool   = mysqlPool env
         prefix = tablePrefix env
 
 fetchSync :: BlockedFetch CoinReq -> TablePrefix -> Connection -> IO ()

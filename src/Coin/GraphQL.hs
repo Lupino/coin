@@ -9,16 +9,17 @@ module Coin.GraphQL
 
 import           Coin.API
 import           Coin.Types
-import           Coin.UserEnv         (CoinM)
-import           Control.Applicative  (empty)
-import           Data.GraphQL.AST     (Name)
-import           Data.GraphQL.Schema  (Resolver, Schema, arrayA', object',
-                                       objectA, scalar, scalarA)
-import           Data.List.NonEmpty   (NonEmpty ((:|)), fromList)
-import           Data.Maybe           (fromMaybe)
-import           Data.Text            (unpack)
+import           Control.Applicative   (empty)
+import           Data.GraphQL.AST      (Name)
+import           Data.GraphQL.Schema   (Resolver, Schema, arrayA', object',
+                                        objectA, scalar, scalarA)
+import           Data.List.NonEmpty    (NonEmpty ((:|)), fromList)
+import           Data.Maybe            (fromMaybe)
+import           Data.Text             (unpack)
+import           Haxl.Core             (GenHaxl)
+import           Yuntan.Types.HasMySQL (HasMySQL)
 
-import           Yuntan.Utils.GraphQL (getIntValue, getTextValue, value')
+import           Yuntan.Utils.GraphQL  (getIntValue, getTextValue, value')
 -- type Query {
 --   coin(name: String!): Coin
 -- }
@@ -39,33 +40,33 @@ import           Yuntan.Utils.GraphQL (getIntValue, getTextValue, value')
 --
 -- }
 
-schema :: Schema CoinM
+schema :: HasMySQL u => Schema (GenHaxl u)
 schema = coin_ :| []
 
-schemaByUser :: String -> Schema CoinM
+schemaByUser :: HasMySQL u => String -> Schema (GenHaxl u)
 schemaByUser n = fromList (coin__ n)
 
-coin_ :: Resolver CoinM
+coin_ :: HasMySQL u => Resolver (GenHaxl u)
 coin_ = objectA "coin" $ \argv -> do
   case getTextValue "name" argv of
     Nothing   -> empty
     Just name -> coin__ $ unpack name
 
-coin__ :: String -> [Resolver CoinM]
+coin__ :: HasMySQL u => String -> [Resolver (GenHaxl u)]
 coin__ n = [ score "score"   n
            , info  "info"    n
            , coins "history" n
            , total "total"   n
            ]
 
-score :: Name -> String -> Resolver CoinM
+score :: HasMySQL u => Name -> String -> Resolver (GenHaxl u)
 score n name = scalarA n . const $ getScore name
 
-info :: Name -> String -> Resolver CoinM
+info :: HasMySQL u => Name -> String -> Resolver (GenHaxl u)
 info n name = object' n $ value' <$> getInfo name
 
 
-coins :: Name -> String -> Resolver CoinM
+coins :: HasMySQL u => Name -> String -> Resolver (GenHaxl u)
 coins n name = arrayA' n $ \argv -> do
   let from = fromMaybe 0  $ getIntValue "from" argv
       size = fromMaybe 10 $ getIntValue "size" argv
@@ -73,10 +74,10 @@ coins n name = arrayA' n $ \argv -> do
   map coin <$> getCoins name from size
 
 
-total :: Name -> String -> Resolver CoinM
+total :: HasMySQL u => Name -> String -> Resolver (GenHaxl u)
 total n name = scalarA n . const $ countCoin name
 
-coin :: Coin -> [Resolver CoinM]
+coin :: HasMySQL u => Coin -> [Resolver (GenHaxl u)]
 coin c = [ scalar "score" $ getCoinScore c
          , scalar "pre_score" $ getCoinPreScore c
          , scalar "type" . show $ getCoinType c
