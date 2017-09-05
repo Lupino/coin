@@ -3,7 +3,6 @@
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE StandaloneDeriving    #-}
 {-# LANGUAGE TypeFamilies          #-}
 
@@ -17,9 +16,8 @@ import           Data.Typeable            (Typeable)
 import           Haxl.Core                (BlockedFetch (..), DataSource,
                                            DataSourceName, Flags,
                                            PerformFetch (..), ShowP, State,
-                                           StateKey, StateStore, dataSourceName,
-                                           fetch, putFailure, putSuccess, showp,
-                                           stateEmpty, stateSet)
+                                           StateKey, dataSourceName, fetch,
+                                           putFailure, putSuccess, showp)
 
 import           Coin.DataSource.Coin
 import           Coin.DataSource.Table
@@ -107,6 +105,5 @@ fetchReq (CountCoin n)     = countCoin n
 fetchReq (GetInfo n)       = getInfo n
 fetchReq (SetInfo n i)     = setInfo n i
 
-initCoinState :: Int -> StateStore
-initCoinState threads = stateSet coinState stateEmpty
-  where coinState = CoinState threads
+initCoinState :: Int -> State CoinReq
+initCoinState = CoinState

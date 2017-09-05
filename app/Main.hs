@@ -24,7 +24,8 @@ import           Web.Scotty.Trans                     (body, get, json,
 
 import           Coin
 import           Haxl.Core                            (StateStore, initEnv,
-                                                       runHaxl)
+                                                       runHaxl, stateEmpty,
+                                                       stateSet)
 
 import           Yuntan.Types.ListResult              (ListResult (..))
 import           Yuntan.Utils.Scotty                  (errBadRequest, ok,
@@ -85,7 +86,7 @@ program Options { getConfigFile = confFile
 
   pool <- C.genMySQLPool mysqlConfig
 
-  let state = initCoinState mysqlThreads
+  let state = stateSet (initCoinState mysqlThreads) stateEmpty
 
   let userEnv = UserEnv { mySQLPool = pool, tablePrefix = prefix }
 
@@ -104,13 +105,13 @@ application :: ScottyM ()
 application = do
   middleware logStdout
 
-  get  "/api/coins/:name/score/" $ getScoreHandler
-  get  "/api/coins/:name/info/"  $ getInfoHandler
-  put  "/api/coins/:name/info/"  $ setInfoHandler
-  get  "/api/coins/:name/"       $ getCoinListHandler
-  post "/api/coins/:name/"       $ saveCoinHandler
-  post "/api/graphql/"           $ graphqlHandler
-  post "/api/graphql/:name/"     $ graphqlByUserHandler
+  get  "/api/coins/:name/score/" getScoreHandler
+  get  "/api/coins/:name/info/"  getInfoHandler
+  put  "/api/coins/:name/info/"  setInfoHandler
+  get  "/api/coins/:name/"       getCoinListHandler
+  post "/api/coins/:name/"       saveCoinHandler
+  post "/api/graphql/"           graphqlHandler
+  post "/api/graphql/:name/"     graphqlByUserHandler
 
 getScoreHandler :: ActionM ()
 getScoreHandler = do
