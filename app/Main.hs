@@ -15,13 +15,13 @@ import           Web.Scotty.Trans                     (get, middleware, post,
 
 import           Coin
 import           Coin.Handler
-import           Haxl.Core                            (StateStore, initEnv,
-                                                       runHaxl, stateEmpty,
-                                                       stateSet)
+import           Haxl.Core                            (GenHaxl, StateStore,
+                                                       initEnv, runHaxl,
+                                                       stateEmpty, stateSet)
 
 import           Yuntan.Utils.Scotty                  (ScottyH)
 
-import           Yuntan.Types.HasMySQL                (HasMySQL)
+import           Yuntan.Types.HasMySQL                (HasMySQL, simpleEnv)
 
 
 import qualified Coin.Config                          as C
@@ -80,15 +80,13 @@ program Options { getConfigFile = confFile
 
   let state = stateSet (initCoinState mysqlThreads) stateEmpty
 
-  let userEnv = UserEnv { mySQLPool = pool, tablePrefix = prefix }
-
   let opts = def { settings = setPort port
                             $ setHost (Host host) (settings def) }
 
-  _ <- runIO userEnv state createTable
-  scottyOptsT opts (runIO userEnv state) application
+  _ <- runIO (simpleEnv pool prefix) state createTable
+  scottyOptsT opts (runIO (simpleEnv pool prefix) state) application
   where
-        runIO :: UserEnv -> StateStore -> CoinM b -> IO b
+        runIO :: HasMySQL u => u -> StateStore -> GenHaxl u b -> IO b
         runIO env s m = do
           env0 <- initEnv s env
           runHaxl env0 m

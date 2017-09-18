@@ -6,4 +6,3 @@ module Coin
 import           Coin.API        as X
 import           Coin.DataSource as X (initCoinState)
 import           Coin.Types      as X
-import           Coin.UserEnv    as X

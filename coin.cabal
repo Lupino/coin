@@ -22,7 +22,6 @@ library
                      , Coin.DataSource
                      , Coin.API
                      , Coin.Handler
-                     , Coin.UserEnv
                      , Coin.Config
                      , Coin.GraphQL
   build-depends:       base >= 4.7 && < 5
