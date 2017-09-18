@@ -28,8 +28,11 @@ import           Haxl.Core                            (StateStore, initEnv,
                                                        stateSet)
 
 import           Yuntan.Types.ListResult              (ListResult (..))
-import           Yuntan.Utils.Scotty                  (errBadRequest, ok,
+import           Yuntan.Utils.Scotty                  (ActionH, ScottyH,
+                                                       errBadRequest, ok,
                                                        okListResult)
+
+import           Yuntan.Types.HasMySQL                (HasMySQL)
 
 
 import qualified Coin.Config                          as C
@@ -101,7 +104,7 @@ program Options { getConfigFile = confFile
           env0 <- initEnv s env
           runHaxl env0 m
 
-application :: ScottyM ()
+application :: HasMySQL u => ScottyH u ()
 application = do
   middleware logStdout
 
@@ -113,20 +116,20 @@ application = do
   post "/api/graphql/"           graphqlHandler
   post "/api/graphql/:name/"     graphqlByUserHandler
 
-getScoreHandler :: ActionM ()
+getScoreHandler :: HasMySQL u => ActionH u ()
 getScoreHandler = do
   name <- param "name"
   score <- lift $ getScore name
   ok "score" score
 
-getInfoHandler :: ActionM ()
+getInfoHandler :: HasMySQL u => ActionH u ()
 getInfoHandler = do
   name  <- param "name"
   inf  <- lift $ getInfo name
   score <- lift $ getScore name
   json $ object [ "score" .= score, "info" .= inf, "name" .= name ]
 
-setInfoHandler :: ActionM ()
+setInfoHandler :: HasMySQL u => ActionH u ()
 setInfoHandler = do
   name  <- param "name"
   wb <- body
@@ -137,7 +140,7 @@ setInfoHandler = do
       status status204
       raw LB.empty
 
-getCoinListHandler :: ActionM ()
+getCoinListHandler :: HasMySQL u => ActionH u ()
 getCoinListHandler = do
   name <- param "name"
   from <- param "from"  `rescue` (\_ -> return 0)
@@ -151,7 +154,7 @@ getCoinListHandler = do
                                   , getResult = ret
                                   }
 
-saveCoinHandler :: ActionM ()
+saveCoinHandler :: HasMySQL u => ActionH u ()
 saveCoinHandler = do
   name  <- param "name"
   score <- param "score"
@@ -180,13 +183,13 @@ saveCoinHandler = do
         readType "DECR" = Just Decr
         readType _      = Nothing
 
-graphqlHandler :: ActionM ()
+graphqlHandler :: HasMySQL u => ActionH u ()
 graphqlHandler = do
   query <- param "query"
   ret <- lift $ graphql schema query
   json ret
 
-graphqlByUserHandler :: ActionM ()
+graphqlByUserHandler :: HasMySQL u => ActionH u ()
 graphqlByUserHandler = do
   query <- param "query"
   name  <- param "name"
