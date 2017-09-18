@@ -21,6 +21,7 @@ library
                      , Coin.DataSource.Table
                      , Coin.DataSource
                      , Coin.API
+                     , Coin.Handler
                      , Coin.UserEnv
                      , Coin.Config
                      , Coin.GraphQL
@@ -41,6 +42,8 @@ library
                      , graphql
                      , unordered-containers
                      , yuntan-common
+                     , http-types
+                     , mtl
   default-language:    Haskell2010
 
 executable coin
@@ -51,8 +54,6 @@ executable coin
                      , coin
                      , mtl
                      , scotty
-                     , aeson
-                     , text
                      , warp
                      , data-default-class
                      , streaming-commons
@@ -60,9 +61,6 @@ executable coin
                      , optparse-applicative
                      , haxl
                      , yaml
-                     , bytestring
-                     , http-types
-                     , graphql
                      , yuntan-common
   default-language:    Haskell2010
 
