@@ -1,4 +1,3 @@
-{-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Coin.GraphQL
@@ -47,7 +46,7 @@ schemaByUser :: HasMySQL u => String -> Schema (GenHaxl u)
 schemaByUser n = fromList (coin__ n)
 
 coin_ :: HasMySQL u => Resolver (GenHaxl u)
-coin_ = objectA "coin" $ \argv -> do
+coin_ = objectA "coin" $ \argv ->
   case getTextValue "name" argv of
     Nothing   -> empty
     Just name -> coin__ $ unpack name

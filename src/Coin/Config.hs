@@ -13,7 +13,7 @@ import           Data.Aeson                (FromJSON, parseJSON, withObject,
 
 import           Yuntan.Config.MySQLConfig (MySQLConfig (..), genMySQLPool)
 
-data Config = Config { mysqlConfig :: MySQLConfig
+newtype Config = Config { mysqlConfig :: MySQLConfig
                      }
   deriving (Show)
 
