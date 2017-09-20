@@ -6,7 +6,7 @@ module Coin.DataSource.Coin
   , getInfo
   , setInfo
   , saveCoin
-  , getCoins
+  , getCoinList
   , countCoin
   ) where
 
@@ -101,8 +101,8 @@ saveCoin name coin prefix conn = withTransaction conn $ do
   where tp = getCoinType coin
         sc = getCoinScore coin
 
-getCoins :: String -> From -> Size -> TablePrefix -> Connection -> IO [Coin]
-getCoins name from size prefix conn = query conn sql ( name, from ,size )
+getCoinList :: String -> From -> Size -> TablePrefix -> Connection -> IO [Coin]
+getCoinList name from size prefix conn = query conn sql ( name, from ,size )
   where sql = fromString $ concat [ "SELECT"
                                   , " `type`, `score`, `pre_score`, `desc`, `created_at`"
                                   , " FROM `", prefix, "_coins_history`"

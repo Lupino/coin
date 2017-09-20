@@ -71,7 +71,7 @@ coins n name = arrayA' n $ \argv -> do
   let from = fromMaybe 0  $ getIntValue "from" argv
       size = fromMaybe 10 $ getIntValue "size" argv
 
-  map coin <$> getCoins name from size
+  map coin <$> getCoinList name from size
 
 
 total :: HasMySQL u => Name -> String -> Resolver (GenHaxl u)

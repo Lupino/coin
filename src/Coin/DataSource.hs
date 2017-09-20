@@ -39,7 +39,7 @@ data CoinReq a where
   CreateTable :: CoinReq Int64
   GetScore    :: String -> CoinReq Score
   SaveCoin    :: String -> Coin -> CoinReq Score
-  GetCoins    :: String -> From -> Size -> CoinReq [Coin]
+  GetCoinList :: String -> From -> Size -> CoinReq [Coin]
   CountCoin   :: String -> CoinReq Int64
   GetInfo     :: String -> CoinReq ByteString
   SetInfo     :: String -> ByteString -> CoinReq ()
@@ -48,13 +48,13 @@ data CoinReq a where
 
 deriving instance Eq (CoinReq a)
 instance Hashable (CoinReq a) where
-  hashWithSalt s CreateTable       = hashWithSalt s (0::Int)
-  hashWithSalt s (GetScore n)      = hashWithSalt s (1::Int, n)
-  hashWithSalt s (SaveCoin n c)    = hashWithSalt s (2::Int, n, c)
-  hashWithSalt s (GetCoins n f si) = hashWithSalt s (3::Int, n, f, si)
-  hashWithSalt s (CountCoin n)     = hashWithSalt s (4::Int, n)
-  hashWithSalt s (GetInfo n)       = hashWithSalt s (5::Int, n)
-  hashWithSalt s (SetInfo n i)     = hashWithSalt s (6::Int, n, i)
+  hashWithSalt s CreateTable          = hashWithSalt s (0::Int)
+  hashWithSalt s (GetScore n)         = hashWithSalt s (1::Int, n)
+  hashWithSalt s (SaveCoin n c)       = hashWithSalt s (2::Int, n, c)
+  hashWithSalt s (GetCoinList n f si) = hashWithSalt s (3::Int, n, f, si)
+  hashWithSalt s (CountCoin n)        = hashWithSalt s (4::Int, n)
+  hashWithSalt s (GetInfo n)          = hashWithSalt s (5::Int, n)
+  hashWithSalt s (SetInfo n i)        = hashWithSalt s (6::Int, n, i)
 
 deriving instance Show (CoinReq a)
 instance ShowP CoinReq where showp = show
@@ -97,13 +97,13 @@ fetchSync (BlockedFetch req rvar) prefix conn = do
     Right a -> putSuccess rvar a
 
 fetchReq :: CoinReq a -> TablePrefix -> Connection -> IO a
-fetchReq CreateTable       = createTable
-fetchReq (GetScore n)      = getScore n
-fetchReq (SaveCoin n c)    = saveCoin n c
-fetchReq (GetCoins n f si) = getCoins n f si
-fetchReq (CountCoin n)     = countCoin n
-fetchReq (GetInfo n)       = getInfo n
-fetchReq (SetInfo n i)     = setInfo n i
+fetchReq CreateTable          = createTable
+fetchReq (GetScore n)         = getScore n
+fetchReq (SaveCoin n c)       = saveCoin n c
+fetchReq (GetCoinList n f si) = getCoinList n f si
+fetchReq (CountCoin n)        = countCoin n
+fetchReq (GetInfo n)          = getInfo n
+fetchReq (SetInfo n i)        = setInfo n i
 
 initCoinState :: Int -> State CoinReq
 initCoinState = CoinState

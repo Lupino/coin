@@ -59,7 +59,7 @@ getCoinListHandler = do
   from <- param "from"  `rescue` (\_ -> return 0)
   size <- param "size" `rescue` (\_ -> return 10)
 
-  ret <- lift $ getCoins name from size
+  ret <- lift $ getCoinList name from size
   total <- lift $ countCoin name
   okListResult "coins" ListResult { getTotal  = total
                                   , getFrom   = from
