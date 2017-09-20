@@ -9,9 +9,11 @@ module Coin.Handler
   , saveCoinHandler
   , graphqlHandler
   , graphqlByUserHandler
+  , getCoinHistoryHandler
   ) where
 
 import           Coin.GraphQL            (schema, schemaByUser)
+import           Control.Monad.IO.Class  (liftIO)
 import           Control.Monad.Reader    (lift)
 import           Data.Aeson              (Value, decode, object, (.=))
 import qualified Data.ByteString.Lazy    as LB (empty)
@@ -21,6 +23,7 @@ import           Web.Scotty.Trans        (body, json, param, raw, rescue,
                                           status)
 
 import           Coin
+import           Data.UnixTime
 
 import           Yuntan.Types.ListResult (ListResult (..))
 import           Yuntan.Utils.Scotty     (ActionH, errBadRequest, ok,
@@ -53,14 +56,33 @@ setInfoHandler = do
       status status204
       raw LB.empty
 
+paramPage :: ActionH u (From, Size)
+paramPage = do
+  from <- param "from" `rescue` (\_ -> return (0::From))
+  size <- param "size" `rescue` (\_ -> return (10::Size))
+  return (from, size)
+
 getCoinListHandler :: HasMySQL u => ActionH u ()
 getCoinListHandler = do
   name <- param "name"
-  from <- param "from"  `rescue` (\_ -> return 0)
-  size <- param "size" `rescue` (\_ -> return 10)
+  (from, size) <- paramPage
 
   ret <- lift $ getCoinList name from size
   total <- lift $ countCoin name
+  okListResult "coins" ListResult { getTotal  = total
+                                  , getFrom   = from
+                                  , getSize   = size
+                                  , getResult = ret
+                                  }
+
+getCoinHistoryHandler :: HasMySQL u => ActionH u ()
+getCoinHistoryHandler = do
+  (from, size) <- paramPage
+  startTime <- param "start_time" `rescue` (\_ -> return 0)
+  endTime <- param "end_time" `rescue` (\_ -> liftIO $ read . show . toEpochTime <$> getUnixTime)
+
+  ret <- lift $ getCoinHistory startTime endTime from size
+  total <- lift $ countCoinHistory startTime endTime
   okListResult "coins" ListResult { getTotal  = total
                                   , getFrom   = from
                                   , getSize   = size

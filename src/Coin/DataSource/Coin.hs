@@ -8,6 +8,9 @@ module Coin.DataSource.Coin
   , saveCoin
   , getCoinList
   , countCoin
+
+  , getCoinHistory
+  , countCoinHistory
   ) where
 
 import           Database.MySQL.Simple  (Connection, Only (..), execute,
@@ -113,3 +116,21 @@ countCoin :: String -> TablePrefix -> Connection -> IO Int64
 countCoin name prefix conn = maybe 0 fromOnly . listToMaybe <$> query conn sql (Only name)
   where sql = fromString $ concat [ "SELECT count(*) FROM `", prefix, "_coins_history` WHERE `name` = ?" ]
 
+
+getCoinHistory :: Int64 -> Int64 -> From -> Size -> TablePrefix -> Connection -> IO [CoinHistory]
+getCoinHistory start end from size prefix conn = query conn sql (start, end, from ,size)
+  where sql = fromString $ concat [ "SELECT"
+                                  , " `name`, `type`, `score`, `pre_score`, `desc`, `created_at`"
+                                  , " FROM `", prefix, "_coins_history`"
+                                  , " WHERE `created_at` > ? AND `created_at` < ?"
+                                  , " ORDER BY `id` DESC LIMIT ?,?"
+                                  ]
+
+countCoinHistory :: Int64 -> Int64 -> TablePrefix -> Connection -> IO Int64
+countCoinHistory start end prefix conn =
+  maybe 0 fromOnly . listToMaybe <$> query conn sql (start, end)
+  where sql = fromString $ concat [ "SELECT"
+                                  , " count(*)"
+                                  , " FROM `", prefix, "_coins_history`"
+                                  , " WHERE `created_at` > ? AND `created_at` < ?"
+                                  ]

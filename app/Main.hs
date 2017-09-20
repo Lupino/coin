@@ -99,6 +99,7 @@ application = do
   get  "/api/coins/:name/info/"  getInfoHandler
   put  "/api/coins/:name/info/"  setInfoHandler
   get  "/api/coins/:name/"       getCoinListHandler
+  get  "/api/coins_history/"     getCoinHistoryHandler
   post "/api/coins/:name/"       saveCoinHandler
   post "/api/graphql/"           graphqlHandler
   post "/api/graphql/:name/"     graphqlByUserHandler

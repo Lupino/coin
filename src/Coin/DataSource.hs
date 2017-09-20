@@ -36,25 +36,29 @@ import           Control.Concurrent.QSem
 -- Data source implementation.
 
 data CoinReq a where
-  CreateTable :: CoinReq Int64
-  GetScore    :: String -> CoinReq Score
-  SaveCoin    :: String -> Coin -> CoinReq Score
-  GetCoinList :: String -> From -> Size -> CoinReq [Coin]
-  CountCoin   :: String -> CoinReq Int64
-  GetInfo     :: String -> CoinReq ByteString
-  SetInfo     :: String -> ByteString -> CoinReq ()
+  CreateTable      :: CoinReq Int64
+  GetScore         :: String -> CoinReq Score
+  SaveCoin         :: String -> Coin -> CoinReq Score
+  GetCoinList      :: String -> From -> Size -> CoinReq [Coin]
+  CountCoin        :: String -> CoinReq Int64
+  GetInfo          :: String -> CoinReq ByteString
+  SetInfo          :: String -> ByteString -> CoinReq ()
+  GetCoinHistory   :: Int64 -> Int64 -> From -> Size -> CoinReq [CoinHistory]
+  CountCoinHistory :: Int64 -> Int64 -> CoinReq Int64
 
   deriving (Typeable)
 
 deriving instance Eq (CoinReq a)
 instance Hashable (CoinReq a) where
-  hashWithSalt s CreateTable          = hashWithSalt s (0::Int)
-  hashWithSalt s (GetScore n)         = hashWithSalt s (1::Int, n)
-  hashWithSalt s (SaveCoin n c)       = hashWithSalt s (2::Int, n, c)
-  hashWithSalt s (GetCoinList n f si) = hashWithSalt s (3::Int, n, f, si)
-  hashWithSalt s (CountCoin n)        = hashWithSalt s (4::Int, n)
-  hashWithSalt s (GetInfo n)          = hashWithSalt s (5::Int, n)
-  hashWithSalt s (SetInfo n i)        = hashWithSalt s (6::Int, n, i)
+  hashWithSalt s CreateTable              = hashWithSalt s (0::Int)
+  hashWithSalt s (GetScore n)             = hashWithSalt s (1::Int, n)
+  hashWithSalt s (SaveCoin n c)           = hashWithSalt s (2::Int, n, c)
+  hashWithSalt s (GetCoinList n f si)     = hashWithSalt s (3::Int, n, f, si)
+  hashWithSalt s (CountCoin n)            = hashWithSalt s (4::Int, n)
+  hashWithSalt s (GetInfo n)              = hashWithSalt s (5::Int, n)
+  hashWithSalt s (SetInfo n i)            = hashWithSalt s (6::Int, n, i)
+  hashWithSalt s (GetCoinHistory a b c d) = hashWithSalt s (7::Int, a, b, c, d)
+  hashWithSalt s (CountCoinHistory a b)   = hashWithSalt s (8::Int, a, b)
 
 deriving instance Show (CoinReq a)
 instance ShowP CoinReq where showp = show
@@ -97,13 +101,15 @@ fetchSync (BlockedFetch req rvar) prefix conn = do
     Right a -> putSuccess rvar a
 
 fetchReq :: CoinReq a -> TablePrefix -> Connection -> IO a
-fetchReq CreateTable          = createTable
-fetchReq (GetScore n)         = getScore n
-fetchReq (SaveCoin n c)       = saveCoin n c
-fetchReq (GetCoinList n f si) = getCoinList n f si
-fetchReq (CountCoin n)        = countCoin n
-fetchReq (GetInfo n)          = getInfo n
-fetchReq (SetInfo n i)        = setInfo n i
+fetchReq CreateTable              = createTable
+fetchReq (GetScore n)             = getScore n
+fetchReq (SaveCoin n c)           = saveCoin n c
+fetchReq (GetCoinList n f si)     = getCoinList n f si
+fetchReq (CountCoin n)            = countCoin n
+fetchReq (GetInfo n)              = getInfo n
+fetchReq (SetInfo n i)            = setInfo n i
+fetchReq (GetCoinHistory a b c d) = getCoinHistory a b c d
+fetchReq (CountCoinHistory a b)   = countCoinHistory a b
 
 initCoinState :: Int -> State CoinReq
 initCoinState = CoinState

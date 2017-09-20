@@ -13,6 +13,8 @@ module Coin.Types
   , CoinType (..)
   , Coin (..)
   , zeroCoin
+
+  , CoinHistory (..)
   ) where
 
 import           Database.MySQL.Simple.QueryResults (QueryResults, convertError,
@@ -74,3 +76,35 @@ instance ToJSON Coin where
                            , "desc"       .= getCoinDesc
                            , "created_at" .= getCoinCreatedAt
                            ]
+
+data CoinHistory = CoinHistory
+  { hCoinName      :: String
+  , hCoinType      :: CoinType
+  , hCoinScore     :: Score
+  , hCoinPreScore  :: Score
+  , hCoinDesc      :: Text
+  , hCoinCreatedAt :: CreatedAt
+  }
+  deriving (Show)
+
+
+instance QueryResults CoinHistory where
+  convertResults [fa, fb, fc, fd, fe, ff]
+                 [va, vb, vc, vd, ve, vf] = CoinHistory{..}
+    where !hCoinName      = convert fa va
+          !hCoinType      = fromMaybe Incr . readMaybe $ convert fb vb
+          !hCoinScore     = convert fc vc
+          !hCoinPreScore  = convert fd vd
+          !hCoinDesc      = convert fe vd
+          !hCoinCreatedAt = convert ff vf
+  convertResults fs vs  = convertError fs vs 2
+
+instance ToJSON CoinHistory where
+  toJSON CoinHistory{..} = object
+    [ "name"       .= hCoinName
+    , "type"       .= show hCoinType
+    , "score"      .= hCoinScore
+    , "pre_score"  .= hCoinPreScore
+    , "desc"       .= hCoinDesc
+    , "created_at" .= hCoinCreatedAt
+    ]
