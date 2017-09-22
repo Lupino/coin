@@ -95,7 +95,7 @@ instance QueryResults CoinHistory where
           !hCoinType      = fromMaybe Incr . readMaybe $ convert fb vb
           !hCoinScore     = convert fc vc
           !hCoinPreScore  = convert fd vd
-          !hCoinDesc      = convert fe vd
+          !hCoinDesc      = convert fe ve
           !hCoinCreatedAt = convert ff vf
   convertResults fs vs  = convertError fs vs 2
 
