@@ -9,6 +9,7 @@ module Coin.API
   , createTable
   , getCoinHistory
   , countCoinHistory
+  , dropCoin
   ) where
 
 import           Data.Aeson            (Value (..), decodeStrict, encode)
@@ -30,6 +31,7 @@ countCoin        :: HasMySQL u => String -> GenHaxl u Int64
 createTable      :: HasMySQL u => GenHaxl u Int64
 getCoinHistory   :: HasMySQL u => Int64 -> Int64 -> From -> Size -> GenHaxl u [CoinHistory]
 countCoinHistory :: HasMySQL u => Int64 -> Int64 -> GenHaxl u Int64
+dropCoin         :: HasMySQL u => String -> GenHaxl u ()
 
 getScore n             = uncachedRequest (GetScore n)
 getInfo n              = fromMaybe Null . decodeStrict <$> dataFetch (GetInfo n)
@@ -40,3 +42,4 @@ countCoin n            = uncachedRequest (CountCoin n)
 createTable            = uncachedRequest CreateTable
 getCoinHistory a b c d = uncachedRequest (GetCoinHistory a b c d)
 countCoinHistory a b   = uncachedRequest (CountCoinHistory a b)
+dropCoin a             = uncachedRequest (DropCoin a)

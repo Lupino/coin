@@ -10,6 +10,7 @@ module Coin.Handler
   , graphqlHandler
   , graphqlByUserHandler
   , getCoinHistoryHandler
+  , dropCoinHandler
   ) where
 
 import           Coin.GraphQL            (schema, schemaByUser)
@@ -55,6 +56,13 @@ setInfoHandler = do
       lift $ setInfo name v
       status status204
       raw LB.empty
+
+dropCoinHandler :: HasMySQL u => ActionH u ()
+dropCoinHandler = do
+  name  <- param "name"
+  lift $ dropCoin name
+  status status204
+  raw LB.empty
 
 paramPage :: ActionH u (From, Size)
 paramPage = do

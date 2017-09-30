@@ -11,6 +11,8 @@ module Coin.DataSource.Coin
 
   , getCoinHistory
   , countCoinHistory
+
+  , dropCoin
   ) where
 
 import           Database.MySQL.Simple  (Connection, Only (..), execute,
@@ -134,3 +136,10 @@ countCoinHistory start end prefix conn =
                                   , " FROM `", prefix, "_coins_history`"
                                   , " WHERE `created_at` > ? AND `created_at` < ?"
                                   ]
+
+dropCoin :: String -> TablePrefix -> Connection -> IO ()
+dropCoin name prefix conn = do
+  void $ execute conn sql (Only name)
+  void $ execute conn sql1 (Only name)
+  where sql  = fromString $ concat [ "DELETE FROM `", prefix, "_coins` WHERE `name`=?"]
+        sql1 = fromString $ concat [ "DELETE FROM `", prefix, "_coins_history` WHERE `name`=?"]
