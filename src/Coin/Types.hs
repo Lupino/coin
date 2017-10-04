@@ -21,12 +21,15 @@ import           Database.MySQL.Simple.QueryResults (QueryResults, convertError,
                                                      convertResults)
 import           Database.MySQL.Simple.Result       (convert)
 
-import           Data.Aeson                         (ToJSON (..), object, (.=))
+import           Data.Aeson                         (ToJSON (..),
+                                                     Value (String),
+                                                     decodeStrict, object, (.=))
 
 import           Data.Hashable                      (Hashable (..))
 import           Data.Int                           (Int64)
 import           Data.Maybe                         (fromMaybe)
 import           Data.Text                          (Text)
+import           Data.Text.Encoding                 (encodeUtf8)
 import           GHC.Generics                       (Generic)
 import           Text.Read                          (readMaybe)
 
@@ -73,7 +76,7 @@ instance ToJSON Coin where
   toJSON Coin{..} = object [ "type"       .= show getCoinType
                            , "score"      .= getCoinScore
                            , "pre_score"  .= getCoinPreScore
-                           , "desc"       .= getCoinDesc
+                           , "desc"       .= decode getCoinDesc
                            , "created_at" .= getCoinCreatedAt
                            ]
 
@@ -105,6 +108,9 @@ instance ToJSON CoinHistory where
     , "type"       .= show hCoinType
     , "score"      .= hCoinScore
     , "pre_score"  .= hCoinPreScore
-    , "desc"       .= hCoinDesc
+    , "desc"       .= decode hCoinDesc
     , "created_at" .= hCoinCreatedAt
     ]
+
+decode :: Text -> Value
+decode v = fromMaybe (String v) $ decodeStrict $ encodeUtf8 v
