@@ -100,6 +100,7 @@ getCoinHistoryHandler = do
 saveCoinHandler :: HasMySQL u => ActionH u ()
 saveCoinHandler = do
   name  <- param "name"
+  namespace <- param "namespace" `rescue` (\_ -> return "default")
   score <- param "score"
   desc  <- param "desc" `rescue` (\_ -> return "")
   tp    <- param "type"
@@ -107,11 +108,12 @@ saveCoinHandler = do
 
   case readType tp of
     Just tp' -> do
-      ret <- lift $ saveCoin name (zeroCoin { getCoinScore = score
-                                            , getCoinType = tp'
-                                            , getCoinDesc = desc
-                                            , getCoinCreatedAt = ct
-                                            })
+      ret <- lift $ saveCoin namespace name (zeroCoin
+        { getCoinScore = score
+        , getCoinType = tp'
+        , getCoinDesc = desc
+        , getCoinCreatedAt = ct
+        })
 
 
       ok "score" ret

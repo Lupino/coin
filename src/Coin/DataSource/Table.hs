@@ -53,15 +53,6 @@ createCoinHistoryTable prefix conn = void $ execute_ conn sql
 updateTable_1510630539 :: Action
 updateTable_1510630539 prefix conn = do
   void $ execute_ conn . fromString $ concat
-    [ "ALTER TABLE `", prefix, "_coins`"
-    , " ADD COLUMN `namespace` varchar(128) DEFAULT 'default'"
-    , " AFTER `name`"
-    ]
-  void $ execute_ conn . fromString $ concat
-    [ "ALTER TABLE `", prefix, "_coins`"
-    , " ADD KEY `namespace` (`namespace`)"
-    ]
-  void $ execute_ conn . fromString $ concat
     [ "ALTER TABLE `", prefix, "_coins_history`"
     , " ADD COLUMN `namespace` varchar(128) DEFAULT 'default'"
     , " AFTER `name`"

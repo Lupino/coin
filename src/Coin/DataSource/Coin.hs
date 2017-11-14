@@ -82,12 +82,12 @@ prepareSaveCoin name coin prefix conn = do
 
   where ct = getCoinCreatedAt coin
 
-saveCoin' :: String -> Coin -> TablePrefix -> Connection -> IO Int64
-saveCoin' name coin prefix conn = execute conn sql (name, show tp, sc, psc, desc, ct)
+saveCoin' :: String -> String -> Coin -> TablePrefix -> Connection -> IO Int64
+saveCoin' namespace name coin prefix conn = execute conn sql (namespace, name, show tp, sc, psc, desc, ct)
   where sql = fromString $ concat [ "INSERT INTO `", prefix, "_coins_history`"
-                                  , " (`name`, `type`, `score`, `pre_score`, `desc`, `created_at`)"
+                                  , " (`namespace`, `name`, `type`, `score`, `pre_score`, `desc`, `created_at`)"
                                   , " VALUES"
-                                  , " (?, ?, ?, ?, ?, ?)"
+                                  , " (?, ?, ?, ?, ?, ?, ?)"
                                   ]
 
         tp   = getCoinType coin
@@ -96,10 +96,10 @@ saveCoin' name coin prefix conn = execute conn sql (name, show tp, sc, psc, desc
         desc = getCoinDesc coin
         ct   = getCoinCreatedAt coin
 
-saveCoin :: String -> Coin -> TablePrefix -> Connection -> IO Score
-saveCoin name coin prefix conn = withTransaction conn $ do
+saveCoin :: String -> String -> Coin -> TablePrefix -> Connection -> IO Score
+saveCoin namespace name coin prefix conn = withTransaction conn $ do
   coin' <- prepareSaveCoin name coin prefix conn
-  changed <- saveCoin' name coin' prefix conn
+  changed <- saveCoin' namespace name coin' prefix conn
   if changed > 0 then saveScore name tp sc prefix conn
                  else return 0
 
@@ -122,7 +122,7 @@ countCoin name prefix conn = maybe 0 fromOnly . listToMaybe <$> query conn sql (
 getCoinHistory :: Int64 -> Int64 -> From -> Size -> TablePrefix -> Connection -> IO [CoinHistory]
 getCoinHistory start end from size prefix conn = query conn sql (start, end, from ,size)
   where sql = fromString $ concat [ "SELECT"
-                                  , " `name`, `type`, `score`, `pre_score`, `desc`, `created_at`"
+                                  , " `name`, `namespace`, `type`, `score`, `pre_score`, `desc`, `created_at`"
                                   , " FROM `", prefix, "_coins_history`"
                                   , " WHERE `created_at` > ? AND `created_at` < ?"
                                   , " ORDER BY `id` DESC LIMIT ?,?"

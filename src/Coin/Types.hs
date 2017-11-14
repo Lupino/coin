@@ -82,6 +82,7 @@ instance ToJSON Coin where
 
 data CoinHistory = CoinHistory
   { hCoinName      :: String
+  , hCoinNameSpace :: String
   , hCoinType      :: CoinType
   , hCoinScore     :: Score
   , hCoinPreScore  :: Score
@@ -92,19 +93,21 @@ data CoinHistory = CoinHistory
 
 
 instance QueryResults CoinHistory where
-  convertResults [fa, fb, fc, fd, fe, ff]
-                 [va, vb, vc, vd, ve, vf] = CoinHistory{..}
+  convertResults [fa, fb, fc, fd, fe, ff, fg]
+                 [va, vb, vc, vd, ve, vf, vg] = CoinHistory{..}
     where !hCoinName      = convert fa va
-          !hCoinType      = fromMaybe Incr . readMaybe $ convert fb vb
-          !hCoinScore     = convert fc vc
-          !hCoinPreScore  = convert fd vd
-          !hCoinDesc      = convert fe ve
-          !hCoinCreatedAt = convert ff vf
+          !hCoinNameSpace = convert fb vb
+          !hCoinType      = fromMaybe Incr . readMaybe $ convert fc vc
+          !hCoinScore     = convert fd vd
+          !hCoinPreScore  = convert fe ve
+          !hCoinDesc      = convert ff vf
+          !hCoinCreatedAt = convert fg vg
   convertResults fs vs  = convertError fs vs 2
 
 instance ToJSON CoinHistory where
   toJSON CoinHistory{..} = object
     [ "name"       .= hCoinName
+    , "namespace"  .= hCoinNameSpace
     , "type"       .= show hCoinType
     , "score"      .= hCoinScore
     , "pre_score"  .= hCoinPreScore

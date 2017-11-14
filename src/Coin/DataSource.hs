@@ -36,9 +36,9 @@ import           Control.Concurrent.QSem
 -- Data source implementation.
 
 data CoinReq a where
-  MergeData       :: CoinReq Int64
+  MergeData        :: CoinReq Int64
   GetScore         :: String -> CoinReq Score
-  SaveCoin         :: String -> Coin -> CoinReq Score
+  SaveCoin         :: String -> String -> Coin -> CoinReq Score
   GetCoinList      :: String -> From -> Size -> CoinReq [Coin]
   CountCoin        :: String -> CoinReq Int64
   GetInfo          :: String -> CoinReq ByteString
@@ -51,9 +51,9 @@ data CoinReq a where
 
 deriving instance Eq (CoinReq a)
 instance Hashable (CoinReq a) where
-  hashWithSalt s MergeData              = hashWithSalt s (0::Int)
+  hashWithSalt s MergeData                = hashWithSalt s (0::Int)
   hashWithSalt s (GetScore n)             = hashWithSalt s (1::Int, n)
-  hashWithSalt s (SaveCoin n c)           = hashWithSalt s (2::Int, n, c)
+  hashWithSalt s (SaveCoin ns n c)        = hashWithSalt s (2::Int, ns, n, c)
   hashWithSalt s (GetCoinList n f si)     = hashWithSalt s (3::Int, n, f, si)
   hashWithSalt s (CountCoin n)            = hashWithSalt s (4::Int, n)
   hashWithSalt s (GetInfo n)              = hashWithSalt s (5::Int, n)
@@ -105,7 +105,7 @@ fetchSync (BlockedFetch req rvar) prefix conn = do
 fetchReq :: CoinReq a -> TablePrefix -> Connection -> IO a
 fetchReq MergeData                = mergeData
 fetchReq (GetScore n)             = getScore n
-fetchReq (SaveCoin n c)           = saveCoin n c
+fetchReq (SaveCoin s n c)         = saveCoin s n c
 fetchReq (GetCoinList n f si)     = getCoinList n f si
 fetchReq (CountCoin n)            = countCoin n
 fetchReq (GetInfo n)              = getInfo n
