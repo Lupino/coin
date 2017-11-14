@@ -31,6 +31,8 @@ import           Yuntan.Types.ListResult (ListResult (..))
 import           Yuntan.Utils.Scotty     (ActionH, errBadRequest, ok,
                                           okListResult)
 
+import           Data.Int                (Int64)
+import           Haxl.Core               (GenHaxl)
 import           Yuntan.Types.HasMySQL   (HasMySQL)
 
 
@@ -85,28 +87,23 @@ getCoinListHandler = do
                                   }
 
 getCoinHistoryHandler :: HasMySQL u => ActionH u ()
-getCoinHistoryHandler = do
-  (from, size) <- paramPage
-  startTime <- param "start_time" `rescue` (\_ -> return 0)
-  endTime <- param "end_time" `rescue` (\_ -> liftIO $ read . show . toEpochTime <$> getUnixTime)
-
-  ret <- lift $ getCoinHistory startTime endTime from size
-  total <- lift $ countCoinHistory startTime endTime
-  okListResult "coins" ListResult { getTotal  = total
-                                  , getFrom   = from
-                                  , getSize   = size
-                                  , getResult = ret
-                                  }
+getCoinHistoryHandler = coinHistoryHandler countCoinHistory getCoinHistory
 
 getCoinHistoryByNameSpaceHandler :: HasMySQL u => ActionH u ()
 getCoinHistoryByNameSpaceHandler = do
+  namespace <- param "namespace"
+  coinHistoryHandler (countCoinHistoryByNameSpace namespace) (getCoinHistoryByNameSpace namespace)
+
+coinHistoryHandler :: (Int64 -> Int64 -> GenHaxl u Int64)
+                   -> (Int64 -> Int64 -> From -> Size -> GenHaxl u [CoinHistory])
+                   -> ActionH u ()
+coinHistoryHandler count hist = do
   (from, size) <- paramPage
   startTime <- param "start_time" `rescue` (\_ -> return 0)
   endTime <- param "end_time" `rescue` (\_ -> liftIO $ read . show . toEpochTime <$> getUnixTime)
-  namespace <- param "namespace"
 
-  ret <- lift $ getCoinHistoryByNameSpace namespace startTime endTime from size
-  total <- lift $ countCoinHistoryByNameSpace namespace startTime endTime
+  ret <- lift $ hist startTime endTime from size
+  total <- lift $ count startTime endTime
   okListResult "coins" ListResult { getTotal  = total
                                   , getFrom   = from
                                   , getSize   = size

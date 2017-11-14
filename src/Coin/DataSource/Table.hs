@@ -82,7 +82,7 @@ getCurrentVersion prefix conn = do
 
 
 updateVersion :: Int64 -> Action
-updateVersion ts prefix conn = do
+updateVersion ts prefix conn =
   void $ execute_ conn $ fromString $ concat
     [ "UPDATE `", prefix, "_version`"
     , " SET `version` = ", show ts
@@ -102,7 +102,7 @@ mergeData prefix conn = do
   pure 0
 
 processAction :: TablePrefix -> Connection -> Int64 -> (Int64, [Action]) -> IO ()
-processAction prefix conn version (ts, actions) = do
+processAction prefix conn version (ts, actions) =
   if ts > version then do
                   updateVersion ts prefix conn
                   mapM_ (\o -> o prefix conn) actions
