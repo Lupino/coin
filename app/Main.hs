@@ -83,7 +83,7 @@ program Options { getConfigFile = confFile
   let opts = def { settings = setPort port
                             $ setHost (Host host) (settings def) }
 
-  _ <- runIO (simpleEnv pool prefix) state createTable
+  _ <- runIO (simpleEnv pool prefix) state mergeData
   scottyOptsT opts (runIO (simpleEnv pool prefix) state) application
   where
         runIO :: HasMySQL u => u -> StateStore -> GenHaxl u b -> IO b

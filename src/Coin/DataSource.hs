@@ -36,7 +36,7 @@ import           Control.Concurrent.QSem
 -- Data source implementation.
 
 data CoinReq a where
-  CreateTable      :: CoinReq Int64
+  MergeData       :: CoinReq Int64
   GetScore         :: String -> CoinReq Score
   SaveCoin         :: String -> Coin -> CoinReq Score
   GetCoinList      :: String -> From -> Size -> CoinReq [Coin]
@@ -51,7 +51,7 @@ data CoinReq a where
 
 deriving instance Eq (CoinReq a)
 instance Hashable (CoinReq a) where
-  hashWithSalt s CreateTable              = hashWithSalt s (0::Int)
+  hashWithSalt s MergeData              = hashWithSalt s (0::Int)
   hashWithSalt s (GetScore n)             = hashWithSalt s (1::Int, n)
   hashWithSalt s (SaveCoin n c)           = hashWithSalt s (2::Int, n, c)
   hashWithSalt s (GetCoinList n f si)     = hashWithSalt s (3::Int, n, f, si)
@@ -103,7 +103,7 @@ fetchSync (BlockedFetch req rvar) prefix conn = do
     Right a -> putSuccess rvar a
 
 fetchReq :: CoinReq a -> TablePrefix -> Connection -> IO a
-fetchReq CreateTable              = createTable
+fetchReq MergeData                = mergeData
 fetchReq (GetScore n)             = getScore n
 fetchReq (SaveCoin n c)           = saveCoin n c
 fetchReq (GetCoinList n f si)     = getCoinList n f si

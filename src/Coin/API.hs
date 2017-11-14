@@ -6,7 +6,7 @@ module Coin.API
   , saveCoin
   , getCoinList
   , countCoin
-  , createTable
+  , mergeData
   , getCoinHistory
   , countCoinHistory
   , dropCoin
@@ -28,7 +28,7 @@ setInfo          :: HasMySQL u => String -> Value -> GenHaxl u ()
 saveCoin         :: HasMySQL u => String -> Coin -> GenHaxl u Score
 getCoinList      :: HasMySQL u => String -> From -> Size -> GenHaxl u [Coin]
 countCoin        :: HasMySQL u => String -> GenHaxl u Int64
-createTable      :: HasMySQL u => GenHaxl u Int64
+mergeData        :: HasMySQL u => GenHaxl u Int64
 getCoinHistory   :: HasMySQL u => Int64 -> Int64 -> From -> Size -> GenHaxl u [CoinHistory]
 countCoinHistory :: HasMySQL u => Int64 -> Int64 -> GenHaxl u Int64
 dropCoin         :: HasMySQL u => String -> GenHaxl u ()
@@ -39,7 +39,7 @@ setInfo n i            = uncachedRequest . SetInfo n . toStrict $ encode i
 saveCoin n c           = uncachedRequest (SaveCoin n c)
 getCoinList n f si     = uncachedRequest (GetCoinList n f si)
 countCoin n            = uncachedRequest (CountCoin n)
-createTable            = uncachedRequest CreateTable
+mergeData              = uncachedRequest MergeData
 getCoinHistory a b c d = uncachedRequest (GetCoinHistory a b c d)
 countCoinHistory a b   = uncachedRequest (CountCoinHistory a b)
 dropCoin a             = uncachedRequest (DropCoin a)
