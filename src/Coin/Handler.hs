@@ -10,6 +10,7 @@ module Coin.Handler
   , graphqlHandler
   , graphqlByUserHandler
   , getCoinHistoryHandler
+  , getCoinHistoryByNameSpaceHandler
   , dropCoinHandler
   ) where
 
@@ -91,6 +92,21 @@ getCoinHistoryHandler = do
 
   ret <- lift $ getCoinHistory startTime endTime from size
   total <- lift $ countCoinHistory startTime endTime
+  okListResult "coins" ListResult { getTotal  = total
+                                  , getFrom   = from
+                                  , getSize   = size
+                                  , getResult = ret
+                                  }
+
+getCoinHistoryByNameSpaceHandler :: HasMySQL u => ActionH u ()
+getCoinHistoryByNameSpaceHandler = do
+  (from, size) <- paramPage
+  startTime <- param "start_time" `rescue` (\_ -> return 0)
+  endTime <- param "end_time" `rescue` (\_ -> liftIO $ read . show . toEpochTime <$> getUnixTime)
+  namespace <- param "namespace"
+
+  ret <- lift $ getCoinHistoryByNameSpace namespace startTime endTime from size
+  total <- lift $ countCoinHistoryByNameSpace namespace startTime endTime
   okListResult "coins" ListResult { getTotal  = total
                                   , getFrom   = from
                                   , getSize   = size

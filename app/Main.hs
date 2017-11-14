@@ -101,6 +101,7 @@ application = do
   get  "/api/coins/:name/"       getCoinListHandler
   post "/api/coins/:name/drop/"  dropCoinHandler
   get  "/api/coins_history/"     getCoinHistoryHandler
+  get  "/api/coins_history/:namespace/" getCoinHistoryByNameSpaceHandler
   post "/api/coins/:name/"       saveCoinHandler
   post "/api/graphql/"           graphqlHandler
   post "/api/graphql/:name/"     graphqlByUserHandler

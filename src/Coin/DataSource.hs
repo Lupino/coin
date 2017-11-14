@@ -45,6 +45,8 @@ data CoinReq a where
   SetInfo          :: String -> ByteString -> CoinReq ()
   GetCoinHistory   :: Int64 -> Int64 -> From -> Size -> CoinReq [CoinHistory]
   CountCoinHistory :: Int64 -> Int64 -> CoinReq Int64
+  GetCoinHistoryByNameSpace   :: String -> Int64 -> Int64 -> From -> Size -> CoinReq [CoinHistory]
+  CountCoinHistoryByNameSpace :: String -> Int64 -> Int64 -> CoinReq Int64
   DropCoin         :: String -> CoinReq ()
 
   deriving (Typeable)
@@ -60,6 +62,8 @@ instance Hashable (CoinReq a) where
   hashWithSalt s (SetInfo n i)            = hashWithSalt s (6::Int, n, i)
   hashWithSalt s (GetCoinHistory a b c d) = hashWithSalt s (7::Int, a, b, c, d)
   hashWithSalt s (CountCoinHistory a b)   = hashWithSalt s (8::Int, a, b)
+  hashWithSalt s (GetCoinHistoryByNameSpace ns a b c d) = hashWithSalt s (7::Int, ns, a, b, c, d)
+  hashWithSalt s (CountCoinHistoryByNameSpace ns a b)   = hashWithSalt s (8::Int, ns, a, b)
   hashWithSalt s (DropCoin a)             = hashWithSalt s (9::Int, a)
 
 deriving instance Show (CoinReq a)
@@ -112,6 +116,8 @@ fetchReq (GetInfo n)              = getInfo n
 fetchReq (SetInfo n i)            = setInfo n i
 fetchReq (GetCoinHistory a b c d) = getCoinHistory a b c d
 fetchReq (CountCoinHistory a b)   = countCoinHistory a b
+fetchReq (GetCoinHistoryByNameSpace s a b c d) = getCoinHistoryByNameSpace s a b c d
+fetchReq (CountCoinHistoryByNameSpace s a b)   = countCoinHistoryByNameSpace s a b
 fetchReq (DropCoin a)             = dropCoin a
 
 initCoinState :: Int -> State CoinReq

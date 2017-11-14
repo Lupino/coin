@@ -9,6 +9,8 @@ module Coin.API
   , mergeData
   , getCoinHistory
   , countCoinHistory
+  , getCoinHistoryByNameSpace
+  , countCoinHistoryByNameSpace
   , dropCoin
   ) where
 
@@ -31,6 +33,8 @@ countCoin        :: HasMySQL u => String -> GenHaxl u Int64
 mergeData        :: HasMySQL u => GenHaxl u Int64
 getCoinHistory   :: HasMySQL u => Int64 -> Int64 -> From -> Size -> GenHaxl u [CoinHistory]
 countCoinHistory :: HasMySQL u => Int64 -> Int64 -> GenHaxl u Int64
+getCoinHistoryByNameSpace   :: HasMySQL u => String -> Int64 -> Int64 -> From -> Size -> GenHaxl u [CoinHistory]
+countCoinHistoryByNameSpace :: HasMySQL u => String -> Int64 -> Int64 -> GenHaxl u Int64
 dropCoin         :: HasMySQL u => String -> GenHaxl u ()
 
 getScore n             = uncachedRequest (GetScore n)
@@ -42,4 +46,6 @@ countCoin n            = uncachedRequest (CountCoin n)
 mergeData              = uncachedRequest MergeData
 getCoinHistory a b c d = uncachedRequest (GetCoinHistory a b c d)
 countCoinHistory a b   = uncachedRequest (CountCoinHistory a b)
+getCoinHistoryByNameSpace s a b c d = uncachedRequest (GetCoinHistoryByNameSpace s a b c d)
+countCoinHistoryByNameSpace s a b   = uncachedRequest (CountCoinHistoryByNameSpace s a b)
 dropCoin a             = uncachedRequest (DropCoin a)

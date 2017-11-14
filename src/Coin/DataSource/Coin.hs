@@ -11,6 +11,8 @@ module Coin.DataSource.Coin
 
   , getCoinHistory
   , countCoinHistory
+  , getCoinHistoryByNameSpace
+  , countCoinHistoryByNameSpace
 
   , dropCoin
   ) where
@@ -135,6 +137,25 @@ countCoinHistory start end prefix conn =
                                   , " count(*)"
                                   , " FROM `", prefix, "_coins_history`"
                                   , " WHERE `created_at` > ? AND `created_at` < ?"
+                                  ]
+
+
+getCoinHistoryByNameSpace :: String -> Int64 -> Int64 -> From -> Size -> TablePrefix -> Connection -> IO [CoinHistory]
+getCoinHistoryByNameSpace namespace start end from size prefix conn = query conn sql (namespace, start, end, from ,size)
+  where sql = fromString $ concat [ "SELECT"
+                                  , " `name`, `namespace`, `type`, `score`, `pre_score`, `desc`, `created_at`"
+                                  , " FROM `", prefix, "_coins_history`"
+                                  , " WHERE `namespace` = ? AND `created_at` > ? AND `created_at` < ?"
+                                  , " ORDER BY `id` DESC LIMIT ?,?"
+                                  ]
+
+countCoinHistoryByNameSpace :: String -> Int64 -> Int64 -> TablePrefix -> Connection -> IO Int64
+countCoinHistoryByNameSpace namespace start end prefix conn =
+  maybe 0 fromOnly . listToMaybe <$> query conn sql (namespace, start, end)
+  where sql = fromString $ concat [ "SELECT"
+                                  , " count(*)"
+                                  , " FROM `", prefix, "_coins_history`"
+                                  , " WHERE `namespace` = ? AND `created_at` > ? AND `created_at` < ?"
                                   ]
 
 dropCoin :: String -> TablePrefix -> Connection -> IO ()
