@@ -9,7 +9,7 @@ packages:
 - '.'
 - location:
     git: https://github.com/Lupino/yuntan-common.git
-    commit: 4b5546255a30da6858ee097bc1b5ec6e7c20a2f0
+    commit: b17dde04a4ade852385213118d71ac78fedae659
   extra-dep: true
 - location:
     git: https://github.com/jdnavarro/graphql-haskell.git
