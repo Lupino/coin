@@ -19,7 +19,7 @@ import           Haxl.Core                            (GenHaxl, StateStore,
                                                        initEnv, runHaxl,
                                                        stateEmpty, stateSet)
 
-import           Yuntan.Utils.Scotty                  (ScottyH)
+import           Yuntan.Types.Scotty                  (ScottyH)
 
 import           Yuntan.Types.HasMySQL                (HasMySQL, simpleEnv)
 

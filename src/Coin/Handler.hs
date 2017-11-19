@@ -28,8 +28,8 @@ import           Coin
 import           Data.UnixTime
 
 import           Yuntan.Types.ListResult (ListResult (..))
-import           Yuntan.Utils.Scotty     (ActionH, errBadRequest, ok,
-                                          okListResult)
+import           Yuntan.Types.Scotty     (ActionH)
+import           Yuntan.Utils.Scotty     (errBadRequest, ok, okListResult)
 
 import           Data.Int                (Int64)
 import           Haxl.Core               (GenHaxl)
