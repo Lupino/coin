@@ -9,7 +9,6 @@ module Coin.Types
   , Size
   , Score
   , CreatedAt
-  , TablePrefix
   , CoinType (..)
   , Coin (..)
   , zeroCoin
@@ -37,7 +36,6 @@ type From        = Int64
 type Size        = Int64
 type Score       = Int64
 type CreatedAt   = Int64
-type TablePrefix = String
 
 data CoinType = Incr | Decr
   deriving (Generic, Eq, Show, Read)

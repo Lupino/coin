@@ -17,8 +17,9 @@ module Coin.DataSource.Coin
   , dropCoin
   ) where
 
-import           Database.MySQL.Simple  (Connection, Only (..), execute,
-                                         insertID, query, withTransaction)
+import           Database.MySQL.Simple  (Only (..), execute, insertID, query,
+                                         withTransaction)
+import           Yuntan.Types.HasMySQL  (MySQL)
 
 import           Control.Monad          (void)
 import           Control.Monad.IO.Class (liftIO)
@@ -30,22 +31,22 @@ import           Data.UnixTime
 
 import           Coin.Types
 
-getScore :: String -> TablePrefix -> Connection -> IO Score
+getScore :: String -> MySQL Score
 getScore name prefix conn = maybe 0 fromOnly . listToMaybe <$> query conn sql (Only name)
   where sql = fromString $ concat [ "SELECT `score` FROM `", prefix, "_coins` WHERE `name` = ?" ]
 
-getInfo :: String -> TablePrefix -> Connection -> IO ByteString
+getInfo :: String -> MySQL ByteString
 getInfo name prefix conn = maybe empty fromOnly . listToMaybe <$> query conn sql (Only name)
   where sql = fromString $ concat [ "SELECT `info` FROM `", prefix, "_coins` WHERE `name` = ?" ]
 
-hasCoin :: String -> TablePrefix -> Connection -> IO Bool
+hasCoin :: String -> MySQL Bool
 hasCoin name prefix conn = exists <$> query conn sql (Only name)
   where sql = fromString $ concat [ "SELECT `score` FROM `", prefix, "_coins` WHERE `name` = ?" ]
         exists :: [Only Score] -> Bool
         exists (_:_) = True
         exists []    = False
 
-setInfo :: String -> ByteString -> TablePrefix -> Connection -> IO ()
+setInfo :: String -> ByteString -> MySQL ()
 setInfo name info prefix conn = do
   exists <- hasCoin name prefix conn
   if exists then void $ execute conn sql (info, name)
@@ -54,7 +55,7 @@ setInfo name info prefix conn = do
   where sql = fromString $ concat [ "UPDATE `", prefix, "_coins` SET `info` = ? WHERE `name` = ?" ]
         insertSQL = fromString $ concat [ "INSERT INTO `", prefix, "_coins` (`name`, `info`) VALUES (?, ?)" ]
 
-saveScore :: String -> CoinType -> Score -> TablePrefix -> Connection -> IO Score
+saveScore :: String -> CoinType -> Score -> MySQL Score
 saveScore name tp sc prefix conn = do
   exists <- hasCoin name prefix conn
   if exists then do
@@ -74,7 +75,7 @@ saveScore name tp sc prefix conn = do
 
         insertSQL = fromString $ concat [ "INSERT INTO `", prefix, "_coins` (`name`, `score`) VALUES (?, ?)" ]
 
-prepareSaveCoin :: String -> Coin -> TablePrefix -> Connection -> IO Coin
+prepareSaveCoin :: String -> Coin -> MySQL Coin
 prepareSaveCoin name coin prefix conn = do
   preScore <- getScore name prefix conn
   ct' <- if ct > 0 then return ct else liftIO $ read . show . toEpochTime <$> getUnixTime
@@ -84,7 +85,7 @@ prepareSaveCoin name coin prefix conn = do
 
   where ct = getCoinCreatedAt coin
 
-saveCoin' :: String -> String -> Coin -> TablePrefix -> Connection -> IO Int64
+saveCoin' :: String -> String -> Coin -> MySQL Int64
 saveCoin' namespace name coin prefix conn = execute conn sql (namespace, name, show tp, sc, psc, desc, ct)
   where sql = fromString $ concat [ "INSERT INTO `", prefix, "_coins_history`"
                                   , " (`namespace`, `name`, `type`, `score`, `pre_score`, `desc`, `created_at`)"
@@ -98,7 +99,7 @@ saveCoin' namespace name coin prefix conn = execute conn sql (namespace, name, s
         desc = getCoinDesc coin
         ct   = getCoinCreatedAt coin
 
-saveCoin :: String -> String -> Coin -> TablePrefix -> Connection -> IO Score
+saveCoin :: String -> String -> Coin -> MySQL Score
 saveCoin namespace name coin prefix conn = withTransaction conn $ do
   coin' <- prepareSaveCoin name coin prefix conn
   changed <- saveCoin' namespace name coin' prefix conn
@@ -108,7 +109,7 @@ saveCoin namespace name coin prefix conn = withTransaction conn $ do
   where tp = getCoinType coin
         sc = getCoinScore coin
 
-getCoinList :: String -> From -> Size -> TablePrefix -> Connection -> IO [Coin]
+getCoinList :: String -> From -> Size -> MySQL [Coin]
 getCoinList name from size prefix conn = query conn sql ( name, from ,size )
   where sql = fromString $ concat [ "SELECT"
                                   , " `type`, `score`, `pre_score`, `desc`, `created_at`"
@@ -116,12 +117,12 @@ getCoinList name from size prefix conn = query conn sql ( name, from ,size )
                                   , " WHERE `name` = ? ORDER BY `id` DESC LIMIT ?,?"
                                   ]
 
-countCoin :: String -> TablePrefix -> Connection -> IO Int64
+countCoin :: String -> MySQL Int64
 countCoin name prefix conn = maybe 0 fromOnly . listToMaybe <$> query conn sql (Only name)
   where sql = fromString $ concat [ "SELECT count(*) FROM `", prefix, "_coins_history` WHERE `name` = ?" ]
 
 
-getCoinHistory :: Int64 -> Int64 -> From -> Size -> TablePrefix -> Connection -> IO [CoinHistory]
+getCoinHistory :: Int64 -> Int64 -> From -> Size -> MySQL [CoinHistory]
 getCoinHistory start end from size prefix conn = query conn sql (start, end, from ,size)
   where sql = fromString $ concat [ "SELECT"
                                   , " `name`, `namespace`, `type`, `score`, `pre_score`, `desc`, `created_at`"
@@ -130,7 +131,7 @@ getCoinHistory start end from size prefix conn = query conn sql (start, end, fro
                                   , " ORDER BY `id` DESC LIMIT ?,?"
                                   ]
 
-countCoinHistory :: Int64 -> Int64 -> TablePrefix -> Connection -> IO Int64
+countCoinHistory :: Int64 -> Int64 -> MySQL Int64
 countCoinHistory start end prefix conn =
   maybe 0 fromOnly . listToMaybe <$> query conn sql (start, end)
   where sql = fromString $ concat [ "SELECT"
@@ -140,7 +141,7 @@ countCoinHistory start end prefix conn =
                                   ]
 
 
-getCoinHistoryByNameSpace :: String -> Int64 -> Int64 -> From -> Size -> TablePrefix -> Connection -> IO [CoinHistory]
+getCoinHistoryByNameSpace :: String -> Int64 -> Int64 -> From -> Size -> MySQL [CoinHistory]
 getCoinHistoryByNameSpace namespace start end from size prefix conn = query conn sql (namespace, start, end, from ,size)
   where sql = fromString $ concat [ "SELECT"
                                   , " `name`, `namespace`, `type`, `score`, `pre_score`, `desc`, `created_at`"
@@ -149,7 +150,7 @@ getCoinHistoryByNameSpace namespace start end from size prefix conn = query conn
                                   , " ORDER BY `id` DESC LIMIT ?,?"
                                   ]
 
-countCoinHistoryByNameSpace :: String -> Int64 -> Int64 -> TablePrefix -> Connection -> IO Int64
+countCoinHistoryByNameSpace :: String -> Int64 -> Int64 -> MySQL Int64
 countCoinHistoryByNameSpace namespace start end prefix conn =
   maybe 0 fromOnly . listToMaybe <$> query conn sql (namespace, start, end)
   where sql = fromString $ concat [ "SELECT"
@@ -158,7 +159,7 @@ countCoinHistoryByNameSpace namespace start end prefix conn =
                                   , " WHERE `namespace` = ? AND `created_at` > ? AND `created_at` < ?"
                                   ]
 
-dropCoin :: String -> TablePrefix -> Connection -> IO ()
+dropCoin :: String -> MySQL ()
 dropCoin name prefix conn = do
   void $ execute conn sql (Only name)
   void $ execute conn sql1 (Only name)

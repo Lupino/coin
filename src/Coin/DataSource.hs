@@ -22,13 +22,13 @@ import           Haxl.Core                (BlockedFetch (..), DataSource,
 import           Coin.DataSource.Coin
 import           Coin.DataSource.Table
 import           Coin.Types
-import           Yuntan.Types.HasMySQL    (HasMySQL, mysqlPool, tablePrefix)
+import           Yuntan.Types.HasMySQL    (HasMySQL, MySQL, mysqlPool,
+                                           tablePrefix)
 
 import qualified Control.Exception        (SomeException, bracket_, try)
 import           Data.ByteString          (ByteString)
 import           Data.Int                 (Int64)
 import           Data.Pool                (withResource)
-import           Database.MySQL.Simple    (Connection)
 
 import           Control.Concurrent.Async
 import           Control.Concurrent.QSem
@@ -99,14 +99,14 @@ fetchAsync sem env req = async $
   where pool   = mysqlPool env
         prefix = tablePrefix env
 
-fetchSync :: BlockedFetch CoinReq -> TablePrefix -> Connection -> IO ()
+fetchSync :: BlockedFetch CoinReq -> MySQL ()
 fetchSync (BlockedFetch req rvar) prefix conn = do
   e <- Control.Exception.try $ fetchReq req prefix conn
   case e of
     Left ex -> putFailure rvar (ex :: Control.Exception.SomeException)
     Right a -> putSuccess rvar a
 
-fetchReq :: CoinReq a -> TablePrefix -> Connection -> IO a
+fetchReq :: CoinReq a -> MySQL a
 fetchReq MergeData                = mergeData
 fetchReq (GetScore n)             = getScore n
 fetchReq (SaveCoin s n c)         = saveCoin s n c
