@@ -36,7 +36,7 @@ import           Control.Concurrent.QSem
 -- Data source implementation.
 
 data CoinReq a where
-  MergeData        :: CoinReq Int64
+  MergeData        :: CoinReq ()
   GetScore         :: String -> CoinReq Score
   SaveCoin         :: String -> String -> Coin -> CoinReq Score
   GetCoinList      :: String -> From -> Size -> CoinReq [Coin]
