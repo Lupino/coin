@@ -75,11 +75,18 @@ paramPage = do
 
 getCoinListHandler :: HasMySQL u => ActionH u ()
 getCoinListHandler = do
+  tp <- readType <$> param "type" `rescue` (\_ -> return (""::String))
+  case tp of
+    Nothing -> coinListHandler getCoinList countCoin
+    Just t  -> coinListHandler (getCoinList' t) (countCoin' t)
+
+coinListHandler :: HasMySQL u => (String -> From -> Size -> GenHaxl u [Coin]) -> (String -> GenHaxl u Int64) -> ActionH u ()
+coinListHandler getList count = do
   name <- param "name"
   (from, size) <- paramPage
 
-  ret <- lift $ getCoinList name from size
-  total <- lift $ countCoin name
+  ret <- lift $ getList name from size
+  total <- lift $ count name
   okListResult "coins" ListResult { getTotal  = total
                                   , getFrom   = from
                                   , getSize   = size
@@ -132,14 +139,14 @@ saveCoinHandler = do
       ok "score" ret
     Nothing -> errBadRequest "Invalid type"
 
-  where readType :: String -> Maybe CoinType
-        readType "Incr" = Just Incr
-        readType "Decr" = Just Decr
-        readType "incr" = Just Incr
-        readType "decr" = Just Decr
-        readType "INCR" = Just Incr
-        readType "DECR" = Just Decr
-        readType _      = Nothing
+readType :: String -> Maybe CoinType
+readType "Incr" = Just Incr
+readType "Decr" = Just Decr
+readType "incr" = Just Incr
+readType "decr" = Just Decr
+readType "INCR" = Just Incr
+readType "DECR" = Just Decr
+readType _      = Nothing
 
 graphqlHandler :: HasMySQL u => ActionH u ()
 graphqlHandler = do

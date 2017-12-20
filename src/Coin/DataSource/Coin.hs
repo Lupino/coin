@@ -8,6 +8,8 @@ module Coin.DataSource.Coin
   , saveCoin
   , getCoinList
   , countCoin
+  , getCoinList'
+  , countCoin'
 
   , getCoinHistory
   , countCoinHistory
@@ -121,6 +123,20 @@ countCoin :: String -> MySQL Int64
 countCoin name prefix conn = maybe 0 fromOnly . listToMaybe <$> query conn sql (Only name)
   where sql = fromString $ concat [ "SELECT count(*) FROM `", prefix, "_coins_history` WHERE `name` = ?" ]
 
+getCoinList' :: CoinType -> String -> From -> Size -> MySQL [Coin]
+getCoinList' tp name from size prefix conn = query conn sql (name, show tp, from, size)
+  where sql = fromString $ concat [ "SELECT"
+                                  , " `type`, `score`, `pre_score`, `desc`, `created_at`"
+                                  , " FROM `", prefix, "_coins_history`"
+                                  , " WHERE `name` = ? AND `type` = ?"
+                                  , " ORDER BY `id` DESC LIMIT ?,?"
+                                  ]
+
+countCoin' :: CoinType -> String -> MySQL Int64
+countCoin' tp name prefix conn = maybe 0 fromOnly . listToMaybe <$> query conn sql (name, show tp)
+  where sql = fromString $ concat [ "SELECT count(*) FROM `", prefix, "_coins_history`"
+                                  , " WHERE `name` = ? AND `type` = ?"
+                                  ]
 
 getCoinHistory :: Int64 -> Int64 -> From -> Size -> MySQL [CoinHistory]
 getCoinHistory start end from size prefix conn = query conn sql (start, end, from ,size)
