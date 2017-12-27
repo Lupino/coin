@@ -126,7 +126,7 @@ countCoin name prefix conn = maybe 0 fromOnly . listToMaybe <$> query conn sql (
 getCoinList' :: CoinType -> String -> From -> Size -> MySQL [Coin]
 getCoinList' tp name from size prefix conn = query conn sql (name, show tp, from, size)
   where sql = fromString $ concat [ "SELECT"
-                                  , " `type`, `score`, `pre_score`, `desc`, `created_at`"
+                                  , " `type`, `score`, `pre_score`, `namespace`, `desc`, `created_at`"
                                   , " FROM `", prefix, "_coins_history`"
                                   , " WHERE `name` = ? AND `type` = ?"
                                   , " ORDER BY `id` DESC LIMIT ?,?"
