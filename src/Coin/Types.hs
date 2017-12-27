@@ -45,6 +45,7 @@ instance Hashable CoinType
 data Coin = Coin { getCoinType      :: CoinType
                  , getCoinScore     :: Score
                  , getCoinPreScore  :: Score
+                 , getCoinNameSpace :: String
                  , getCoinDesc      :: Text
                  , getCoinCreatedAt :: CreatedAt
                  }
@@ -56,16 +57,18 @@ zeroCoin :: Coin
 zeroCoin = Coin { getCoinType      = Incr
                 , getCoinScore     = 0
                 , getCoinPreScore  = 0
+                , getCoinNameSpace = ""
                 , getCoinDesc      = ""
                 , getCoinCreatedAt = 0
                 }
 
 instance QueryResults Coin where
-  convertResults [fa, fb, fc, fd, fe]
-                 [va, vb, vc, vd, ve] = Coin{..}
+  convertResults [fa, fb, fc, fn, fd, fe]
+                 [va, vb, vc, vn, vd, ve] = Coin{..}
     where !getCoinType      = fromMaybe Incr . readMaybe $ convert fa va
           !getCoinScore     = convert fb vb
           !getCoinPreScore  = convert fc vc
+          !getCoinNameSpace = convert fn vn
           !getCoinDesc      = convert fd vd
           !getCoinCreatedAt = convert fe ve
   convertResults fs vs  = convertError fs vs 2
@@ -74,6 +77,7 @@ instance ToJSON Coin where
   toJSON Coin{..} = object [ "type"       .= show getCoinType
                            , "score"      .= getCoinScore
                            , "pre_score"  .= getCoinPreScore
+                           , "namespace"  .= getCoinNameSpace
                            , "desc"       .= decode getCoinDesc
                            , "created_at" .= getCoinCreatedAt
                            ]

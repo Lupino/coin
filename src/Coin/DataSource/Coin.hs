@@ -114,7 +114,7 @@ saveCoin namespace name coin prefix conn = withTransaction conn $ do
 getCoinList :: String -> From -> Size -> MySQL [Coin]
 getCoinList name from size prefix conn = query conn sql ( name, from ,size )
   where sql = fromString $ concat [ "SELECT"
-                                  , " `type`, `score`, `pre_score`, `desc`, `created_at`"
+                                  , " `type`, `score`, `pre_score`, `namespace`, `desc`, `created_at`"
                                   , " FROM `", prefix, "_coins_history`"
                                   , " WHERE `name` = ? ORDER BY `id` DESC LIMIT ?,?"
                                   ]
