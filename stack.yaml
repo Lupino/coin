@@ -2,15 +2,23 @@
 # For more information, see: http://docs.haskellstack.org/en/stable/yaml_configuration/
 
 # Specifies the GHC version and set of packages available (e.g., lts-3.5, nightly-2015-09-21, ghc-7.10.2)
-resolver: lts-9.3
+resolver: lts-10.2
 
 # Local packages, usually specified by relative directory name
 packages:
 - '.'
 - location:
     git: https://github.com/Lupino/yuntan-common.git
-    commit: b17dde04a4ade852385213118d71ac78fedae659
+    commit: 2ec5bf2176f327da715016ee4d93cc317870b9d5
   extra-dep: true
+  subdirs:
+  - yuntan-common-scotty
+  - yuntan-common-scotty-type
+  - yuntan-common-graphql
+  - yuntan-common-config-mysql
+  - yuntan-common-list-result
+  - yuntan-common-result
+  - yuntan-common-json
 - location:
     git: https://github.com/jdnavarro/graphql-haskell.git
     commit: 40f9024b51900c73bc0f65444c16022bd73820be
@@ -19,11 +27,7 @@ packages:
 # extra-deps:
 
 # Override default flag values for local packages and extra-deps
-flags:
-  yuntan-common:
-    graphql-utils: true
-    mysql-config: true
-    scotty-utils: true
+# flags: {}
 
 # Extra package databases containing global packages
 extra-package-dbs: []

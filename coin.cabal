@@ -40,7 +40,11 @@ library
 
                      , graphql
                      , unordered-containers
-                     , yuntan-common
+                     , yuntan-common-scotty
+                     , yuntan-common-scotty-type
+                     , yuntan-common-list-result
+                     , yuntan-common-graphql
+                     , yuntan-common-config-mysql
                      , http-types
                      , mtl
   default-language:    Haskell2010
@@ -60,7 +64,8 @@ executable coin
                      , optparse-applicative
                      , haxl
                      , yaml
-                     , yuntan-common
+                     , yuntan-common-scotty-type
+                     , yuntan-common-config-mysql
   default-language:    Haskell2010
 
 test-suite coin-test
