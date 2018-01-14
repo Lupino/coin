@@ -77,26 +77,25 @@ paramPage = do
 getCoinListHandler :: HasMySQL u => ActionH u ()
 getCoinListHandler = do
   tp <- readType <$> param "type" `rescue` (\_ -> return (""::String))
-  name <- param "name"
   case tp of
-    Nothing -> coinListHandler (LQ1 name)
-    Just t  -> coinListHandler (LQ2 name t)
+    Nothing -> coinListHandler LQ1
+    Just t  -> coinListHandler (LQ2 t)
 
 getCoinListByNameSpaceHandler :: HasMySQL u => ActionH u ()
 getCoinListByNameSpaceHandler = do
-  name <- param "name"
   namespace <- param "namespace"
   tp <- readType <$> param "type" `rescue` (\_ -> return (""::String))
   case tp of
-    Nothing -> coinListHandler (LQ3 name namespace)
-    Just t  -> coinListHandler (LQ4 name t namespace)
+    Nothing -> coinListHandler (LQ3 namespace)
+    Just t  -> coinListHandler (LQ4 t namespace)
 
-coinListHandler :: HasMySQL u => ListQuery -> ActionH u ()
+coinListHandler :: HasMySQL u => (String -> ListQuery) -> ActionH u ()
 coinListHandler lq = do
   (from, size) <- paramPage
+  name <- param "name"
 
-  ret <- lift $ getCoinList lq from size
-  total <- lift $ countCoin lq
+  ret <- lift $ getCoinList (lq name) from size
+  total <- lift $ countCoin (lq name)
   okListResult "coins" ListResult { getTotal  = total
                                   , getFrom   = from
                                   , getSize   = size
@@ -107,25 +106,25 @@ getCoinHistoryHandler :: HasMySQL u => ActionH u ()
 getCoinHistoryHandler = do
   tp <- readType <$> param "type" `rescue` (\_ -> return (""::String))
   case tp of
-    Nothing -> coinHistoryHandler (HQ0 0 0)
-    Just t  -> coinHistoryHandler (HQ3 t 0 0)
+    Nothing -> coinHistoryHandler HQ0
+    Just t  -> coinHistoryHandler (HQ3 t)
 
 getCoinHistoryByNameSpaceHandler :: HasMySQL u => ActionH u ()
 getCoinHistoryByNameSpaceHandler = do
   namespace <- param "namespace"
   tp <- readType <$> param "type" `rescue` (\_ -> return (""::String))
   case tp of
-    Nothing -> coinHistoryHandler (HQ2 namespace 0 0)
-    Just t  -> coinHistoryHandler (HQ6 namespace t 0 0)
+    Nothing -> coinHistoryHandler (HQ2 namespace)
+    Just t  -> coinHistoryHandler (HQ6 namespace t)
 
-coinHistoryHandler :: HasMySQL u => HistQuery -> ActionH u ()
+coinHistoryHandler :: HasMySQL u => (Int64 -> Int64 -> HistQuery) -> ActionH u ()
 coinHistoryHandler hq = do
   (from, size) <- paramPage
   startTime <- param "start_time" `rescue` (\_ -> return 0)
   endTime <- param "end_time" `rescue` (\_ -> liftIO $ read . show . toEpochTime <$> getUnixTime)
 
-  ret <- lift $ getCoinHistory (modifyHistQuery hq startTime endTime) from size
-  total <- lift $ countCoinHistory (modifyHistQuery hq startTime endTime)
+  ret <- lift $ getCoinHistory (hq startTime endTime) from size
+  total <- lift $ countCoinHistory (hq startTime endTime)
   okListResult "coins" ListResult { getTotal  = total
                                   , getFrom   = from
                                   , getSize   = size

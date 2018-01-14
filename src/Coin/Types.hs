@@ -22,7 +22,6 @@ module Coin.Types
   , HistQuery (..)
   , hq2T
   , hq2A
-  , modifyHistQuery
   ) where
 
 import           Database.MySQL.Simple.QueryResults (QueryResults, convertError,
@@ -136,9 +135,9 @@ type Name = String
 type NameSpace = String
 
 data ListQuery = LQ1 Name
-               | LQ2 Name CoinType
-               | LQ3 Name NameSpace
-               | LQ4 Name CoinType NameSpace
+               | LQ2 CoinType Name
+               | LQ3 NameSpace Name
+               | LQ4 CoinType NameSpace Name
   deriving (Generic, Eq, Show)
 
 instance Hashable ListQuery
@@ -159,9 +158,9 @@ lq2T (LQ4 _ _ _) = fieldListT ["namespace", "name", "type"]
 
 lq2A :: ListQuery -> [Action]
 lq2A (LQ1 n) = renderParams (Only n)
-lq2A (LQ2 n t) = renderParams (n, show t)
-lq2A (LQ3 n ns) = renderParams (ns, n)
-lq2A (LQ4 n t ns) = renderParams (ns, n, show t)
+lq2A (LQ2 t n) = renderParams (n, show t)
+lq2A (LQ3 ns n) = renderParams (ns, n)
+lq2A (LQ4 t ns n) = renderParams (ns, n, show t)
 
 data HistQuery = HQ0 Int64 Int64
                | HQ1 Name Int64 Int64
@@ -198,13 +197,3 @@ hq2A (HQ4 n ns s e) = renderParams (ns, n, s, e)
 hq2A (HQ5 n t s e) = renderParams (n, show t, s, e)
 hq2A (HQ6 ns t s e) = renderParams (ns, show t, s, e)
 hq2A (HQ7 n ns t s e) = renderParams (ns, n, show t, s, e)
-
-modifyHistQuery :: HistQuery -> Int64 -> Int64 -> HistQuery
-modifyHistQuery (HQ0 _ _) = HQ0
-modifyHistQuery (HQ1 n _ _) = HQ1 n
-modifyHistQuery (HQ2 ns _ _) = HQ2 ns
-modifyHistQuery (HQ3 t _ _) = HQ3 t
-modifyHistQuery (HQ4 n ns _ _) = HQ4 n ns
-modifyHistQuery (HQ5 n t _ _) = HQ5 n t
-modifyHistQuery (HQ6 ns t _ _) = HQ6 ns t
-modifyHistQuery (HQ7 n ns t _ _) = HQ7 n ns t
