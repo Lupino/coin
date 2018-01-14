@@ -8,8 +8,6 @@ module Coin.DataSource.Coin
   , saveCoin
   , getCoinList
   , countCoin
-  , getCoinList'
-  , countCoin'
 
   , getCoinHistory
   , countCoinHistory
@@ -22,6 +20,7 @@ module Coin.DataSource.Coin
 import           Database.MySQL.Simple  (Only (..), execute, insertID, query,
                                          withTransaction)
 import           Yuntan.Types.HasMySQL  (MySQL)
+import           Database.MySQL.Simple.Param
 
 import           Control.Monad          (void)
 import           Control.Monad.IO.Class (liftIO)
@@ -111,32 +110,18 @@ saveCoin namespace name coin prefix conn = withTransaction conn $ do
   where tp = getCoinType coin
         sc = getCoinScore coin
 
-getCoinList :: String -> From -> Size -> MySQL [Coin]
-getCoinList name from size prefix conn = query conn sql ( name, from ,size )
+
+getCoinList :: ListQuery -> From -> Size -> MySQL [Coin]
+getCoinList lq from size prefix conn = query conn sql $ listQueryToAction lq ++ [render from, render size]
   where sql = fromString $ concat [ "SELECT"
                                   , " `type`, `score`, `pre_score`, `namespace`, `desc`, `created_at`"
                                   , " FROM `", prefix, "_coins_history`"
-                                  , " WHERE `name` = ? ORDER BY `id` DESC LIMIT ?,?"
+                                  , " WHERE ", listQueryToTemplate lq, " ORDER BY `id` DESC LIMIT ?,?"
                                   ]
 
-countCoin :: String -> MySQL Int64
-countCoin name prefix conn = maybe 0 fromOnly . listToMaybe <$> query conn sql (Only name)
-  where sql = fromString $ concat [ "SELECT count(*) FROM `", prefix, "_coins_history` WHERE `name` = ?" ]
-
-getCoinList' :: CoinType -> String -> From -> Size -> MySQL [Coin]
-getCoinList' tp name from size prefix conn = query conn sql (name, show tp, from, size)
-  where sql = fromString $ concat [ "SELECT"
-                                  , " `type`, `score`, `pre_score`, `namespace`, `desc`, `created_at`"
-                                  , " FROM `", prefix, "_coins_history`"
-                                  , " WHERE `name` = ? AND `type` = ?"
-                                  , " ORDER BY `id` DESC LIMIT ?,?"
-                                  ]
-
-countCoin' :: CoinType -> String -> MySQL Int64
-countCoin' tp name prefix conn = maybe 0 fromOnly . listToMaybe <$> query conn sql (name, show tp)
-  where sql = fromString $ concat [ "SELECT count(*) FROM `", prefix, "_coins_history`"
-                                  , " WHERE `name` = ? AND `type` = ?"
-                                  ]
+countCoin :: ListQuery -> MySQL Int64
+countCoin lq prefix conn = maybe 0 fromOnly . listToMaybe <$> query conn sql (listQueryToAction lq)
+  where sql = fromString $ concat [ "SELECT count(*) FROM `", prefix, "_coins_history` WHERE ", listQueryToTemplate lq]
 
 getCoinHistory :: Int64 -> Int64 -> From -> Size -> MySQL [CoinHistory]
 getCoinHistory start end from size prefix conn = query conn sql (start, end, from ,size)

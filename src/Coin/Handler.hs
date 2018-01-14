@@ -6,6 +6,7 @@ module Coin.Handler
   , getInfoHandler
   , setInfoHandler
   , getCoinListHandler
+  , getCoinListByNameSpaceHandler
   , saveCoinHandler
   , graphqlHandler
   , graphqlByUserHandler
@@ -76,17 +77,26 @@ paramPage = do
 getCoinListHandler :: HasMySQL u => ActionH u ()
 getCoinListHandler = do
   tp <- readType <$> param "type" `rescue` (\_ -> return (""::String))
-  case tp of
-    Nothing -> coinListHandler getCoinList countCoin
-    Just t  -> coinListHandler (getCoinList' t) (countCoin' t)
-
-coinListHandler :: HasMySQL u => (String -> From -> Size -> GenHaxl u [Coin]) -> (String -> GenHaxl u Int64) -> ActionH u ()
-coinListHandler getList count = do
   name <- param "name"
+  case tp of
+    Nothing -> coinListHandler (LQ1 name)
+    Just t  -> coinListHandler (LQ2 name t)
+
+getCoinListByNameSpaceHandler :: HasMySQL u => ActionH u ()
+getCoinListByNameSpaceHandler = do
+  name <- param "name"
+  namespace <- param "namespace"
+  tp <- readType <$> param "type" `rescue` (\_ -> return (""::String))
+  case tp of
+    Nothing -> coinListHandler (LQ3 name namespace)
+    Just t  -> coinListHandler (LQ4 name t namespace)
+
+coinListHandler :: HasMySQL u => ListQuery -> ActionH u ()
+coinListHandler lq = do
   (from, size) <- paramPage
 
-  ret <- lift $ getList name from size
-  total <- lift $ count name
+  ret <- lift $ getCoinList lq from size
+  total <- lift $ countCoin lq
   okListResult "coins" ListResult { getTotal  = total
                                   , getFrom   = from
                                   , getSize   = size

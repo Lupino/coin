@@ -70,11 +70,11 @@ coins n name = arrayA' n $ \argv -> do
   let from = fromMaybe 0  $ getIntValue "from" argv
       size = fromMaybe 10 $ getIntValue "size" argv
 
-  map coin <$> getCoinList name from size
+  map coin <$> getCoinList (LQ1 name) from size
 
 
 total :: HasMySQL u => Name -> String -> Resolver (GenHaxl u)
-total n name = scalarA n . const $ countCoin name
+total n name = scalarA n . const $ countCoin (LQ1 name)
 
 coin :: HasMySQL u => Coin -> [Resolver (GenHaxl u)]
 coin c = [ scalar "score" $ getCoinScore c

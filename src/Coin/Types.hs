@@ -14,11 +14,16 @@ module Coin.Types
   , zeroCoin
 
   , CoinHistory (..)
+
+  , ListQuery (..)
+  , listQueryToTemplate
+  , listQueryToAction
   ) where
 
 import           Database.MySQL.Simple.QueryResults (QueryResults, convertError,
                                                      convertResults)
 import           Database.MySQL.Simple.Result       (convert)
+import           Database.MySQL.Simple.Param (Action, Param (render))
 
 import           Data.Aeson                         (ToJSON (..),
                                                      Value (String),
@@ -119,3 +124,26 @@ instance ToJSON CoinHistory where
 
 decode :: Text -> Value
 decode v = fromMaybe (String v) $ decodeStrict $ encodeUtf8 v
+
+type Name = String
+type NameSpace = String
+
+data ListQuery = LQ1 Name
+               | LQ2 Name CoinType
+               | LQ3 Name NameSpace
+               | LQ4 Name CoinType NameSpace
+  deriving (Generic, Eq, Show)
+
+instance Hashable ListQuery
+
+listQueryToTemplate :: ListQuery -> String
+listQueryToTemplate (LQ1 _) = "`name` = ?"
+listQueryToTemplate (LQ2 _ _) = "`name` = ? AND `type` = ?"
+listQueryToTemplate (LQ3 _ _) = "`namespace` = ? AND `name` = ?"
+listQueryToTemplate (LQ4 _ _ _) = "`namespace` = ? AND `name` = ? AND `type` = ?"
+
+listQueryToAction :: ListQuery -> [Action]
+listQueryToAction (LQ1 n) = [render n]
+listQueryToAction (LQ2 n t) = [render n, render $ show t]
+listQueryToAction (LQ3 n ns) = [render ns, render n]
+listQueryToAction (LQ4 n t ns) = [render ns, render n, render $ show t]

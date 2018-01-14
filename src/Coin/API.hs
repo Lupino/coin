@@ -6,8 +6,6 @@ module Coin.API
   , saveCoin
   , getCoinList
   , countCoin
-  , getCoinList'
-  , countCoin'
   , mergeData
   , getCoinHistory
   , countCoinHistory
@@ -30,10 +28,8 @@ getScore         :: HasMySQL u => String -> GenHaxl u Score
 getInfo          :: HasMySQL u => String -> GenHaxl u Value
 setInfo          :: HasMySQL u => String -> Value -> GenHaxl u ()
 saveCoin         :: HasMySQL u => String -> String -> Coin -> GenHaxl u Score
-getCoinList      :: HasMySQL u => String -> From -> Size -> GenHaxl u [Coin]
-countCoin        :: HasMySQL u => String -> GenHaxl u Int64
-getCoinList'     :: HasMySQL u => CoinType -> String -> From -> Size -> GenHaxl u [Coin]
-countCoin'       :: HasMySQL u => CoinType -> String -> GenHaxl u Int64
+getCoinList      :: HasMySQL u => ListQuery -> From -> Size -> GenHaxl u [Coin]
+countCoin        :: HasMySQL u => ListQuery -> GenHaxl u Int64
 mergeData        :: HasMySQL u => GenHaxl u ()
 getCoinHistory   :: HasMySQL u => Int64 -> Int64 -> From -> Size -> GenHaxl u [CoinHistory]
 countCoinHistory :: HasMySQL u => Int64 -> Int64 -> GenHaxl u Int64
@@ -47,8 +43,6 @@ setInfo n i            = uncachedRequest . SetInfo n . toStrict $ encode i
 saveCoin s n c         = uncachedRequest (SaveCoin s n c)
 getCoinList n f si     = uncachedRequest (GetCoinList n f si)
 countCoin n            = uncachedRequest (CountCoin n)
-getCoinList' t n f si  = uncachedRequest (GetCoinList' t n f si)
-countCoin' t n         = uncachedRequest (CountCoin' t n)
 mergeData              = uncachedRequest MergeData
 getCoinHistory a b c d = uncachedRequest (GetCoinHistory a b c d)
 countCoinHistory a b   = uncachedRequest (CountCoinHistory a b)

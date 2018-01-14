@@ -39,10 +39,8 @@ data CoinReq a where
   MergeData        :: CoinReq ()
   GetScore         :: String -> CoinReq Score
   SaveCoin         :: String -> String -> Coin -> CoinReq Score
-  GetCoinList      :: String -> From -> Size -> CoinReq [Coin]
-  CountCoin        :: String -> CoinReq Int64
-  GetCoinList'     :: CoinType -> String -> From -> Size -> CoinReq [Coin]
-  CountCoin'       :: CoinType -> String -> CoinReq Int64
+  GetCoinList      :: ListQuery -> From -> Size -> CoinReq [Coin]
+  CountCoin        :: ListQuery -> CoinReq Int64
   GetInfo          :: String -> CoinReq ByteString
   SetInfo          :: String -> ByteString -> CoinReq ()
   GetCoinHistory   :: Int64 -> Int64 -> From -> Size -> CoinReq [CoinHistory]
@@ -60,8 +58,6 @@ instance Hashable (CoinReq a) where
   hashWithSalt s (SaveCoin ns n c)        = hashWithSalt s (2::Int, ns, n, c)
   hashWithSalt s (GetCoinList n f si)     = hashWithSalt s (3::Int, n, f, si)
   hashWithSalt s (CountCoin n)            = hashWithSalt s (4::Int, n)
-  hashWithSalt s (GetCoinList' t n f si)  = hashWithSalt s (3::Int, t, n, f, si)
-  hashWithSalt s (CountCoin' n t)         = hashWithSalt s (4::Int, t, n)
   hashWithSalt s (GetInfo n)              = hashWithSalt s (5::Int, n)
   hashWithSalt s (SetInfo n i)            = hashWithSalt s (6::Int, n, i)
   hashWithSalt s (GetCoinHistory a b c d) = hashWithSalt s (7::Int, a, b, c, d)
@@ -116,8 +112,6 @@ fetchReq (GetScore n)             = getScore n
 fetchReq (SaveCoin s n c)         = saveCoin s n c
 fetchReq (GetCoinList n f si)     = getCoinList n f si
 fetchReq (CountCoin n)            = countCoin n
-fetchReq (GetCoinList' t n f si)  = getCoinList' t n f si
-fetchReq (CountCoin' t n)         = countCoin' t n
 fetchReq (GetInfo n)              = getInfo n
 fetchReq (SetInfo n i)            = setInfo n i
 fetchReq (GetCoinHistory a b c d) = getCoinHistory a b c d
