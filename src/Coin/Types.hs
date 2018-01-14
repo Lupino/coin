@@ -16,14 +16,21 @@ module Coin.Types
   , CoinHistory (..)
 
   , ListQuery (..)
-  , listQueryToTemplate
-  , listQueryToAction
+  , lq2T
+  , lq2A
+
+  , HistQuery (..)
+  , hq2T
+  , hq2A
+  , modifyHistQuery
   ) where
 
 import           Database.MySQL.Simple.QueryResults (QueryResults, convertError,
                                                      convertResults)
 import           Database.MySQL.Simple.Result       (convert)
-import           Database.MySQL.Simple.Param (Action, Param (render))
+import           Database.MySQL.Simple.Param (Action)
+import           Database.MySQL.Simple.QueryParams
+import           Database.MySQL.Simple  (Only (..))
 
 import           Data.Aeson                         (ToJSON (..),
                                                      Value (String),
@@ -136,14 +143,68 @@ data ListQuery = LQ1 Name
 
 instance Hashable ListQuery
 
-listQueryToTemplate :: ListQuery -> String
-listQueryToTemplate (LQ1 _) = "`name` = ?"
-listQueryToTemplate (LQ2 _ _) = "`name` = ? AND `type` = ?"
-listQueryToTemplate (LQ3 _ _) = "`namespace` = ? AND `name` = ?"
-listQueryToTemplate (LQ4 _ _ _) = "`namespace` = ? AND `name` = ? AND `type` = ?"
+fieldT :: String -> String
+fieldT n = "`" ++ n ++ "` = ?"
 
-listQueryToAction :: ListQuery -> [Action]
-listQueryToAction (LQ1 n) = [render n]
-listQueryToAction (LQ2 n t) = [render n, render $ show t]
-listQueryToAction (LQ3 n ns) = [render ns, render n]
-listQueryToAction (LQ4 n t ns) = [render ns, render n, render $ show t]
+fieldListT :: [String] -> String
+fieldListT [] = []
+fieldListT [x] = fieldT x
+fieldListT (x:xs) = fieldT x ++ " AND " ++ fieldListT xs
+
+lq2T :: ListQuery -> String
+lq2T (LQ1 _) = fieldListT ["name"]
+lq2T (LQ2 _ _) = fieldListT ["name", "type"]
+lq2T (LQ3 _ _) = fieldListT ["namespace", "name"]
+lq2T (LQ4 _ _ _) = fieldListT ["namespace", "name", "type"]
+
+lq2A :: ListQuery -> [Action]
+lq2A (LQ1 n) = renderParams (Only n)
+lq2A (LQ2 n t) = renderParams (n, show t)
+lq2A (LQ3 n ns) = renderParams (ns, n)
+lq2A (LQ4 n t ns) = renderParams (ns, n, show t)
+
+data HistQuery = HQ0 Int64 Int64
+               | HQ1 Name Int64 Int64
+               | HQ2 NameSpace Int64 Int64
+               | HQ3 CoinType Int64 Int64
+               | HQ4 Name NameSpace Int64 Int64
+               | HQ5 Name CoinType Int64 Int64
+               | HQ6 NameSpace CoinType Int64 Int64
+               | HQ7 Name NameSpace CoinType Int64 Int64
+  deriving (Generic, Eq, Show)
+
+instance Hashable HistQuery
+
+fieldHistT :: [String] -> String
+fieldHistT [] = "`created_at` > ? AND `created_at` < ?"
+fieldHistT (x:xs) = fieldT x ++ " AND " ++ fieldListT xs
+
+hq2T :: HistQuery -> String
+hq2T (HQ0 _ _) = fieldHistT []
+hq2T (HQ1 _ _ _) = fieldHistT ["name"]
+hq2T (HQ2 _ _ _) = fieldHistT ["namespace"]
+hq2T (HQ3 _ _ _) = fieldHistT ["type"]
+hq2T (HQ4 _ _ _ _) = fieldHistT ["namespace", "name"]
+hq2T (HQ5 _ _ _ _) = fieldHistT ["name", "type"]
+hq2T (HQ6 _ _ _ _) = fieldHistT ["namespace", "type"]
+hq2T (HQ7 _ _ _ _ _) = fieldHistT ["namespace", "name", "type"]
+
+hq2A :: HistQuery -> [Action]
+hq2A (HQ0 s e) = renderParams (s, e)
+hq2A (HQ1 n s e) = renderParams (n, s, e)
+hq2A (HQ2 ns s e) = renderParams (ns, s, e)
+hq2A (HQ3 t s e) = renderParams (show t, s, e)
+hq2A (HQ4 n ns s e) = renderParams (ns, n, s, e)
+hq2A (HQ5 n t s e) = renderParams (n, show t, s, e)
+hq2A (HQ6 ns t s e) = renderParams (ns, show t, s, e)
+hq2A (HQ7 n ns t s e) = renderParams (ns, n, show t, s, e)
+
+modifyHistQuery :: HistQuery -> Int64 -> Int64 -> HistQuery
+modifyHistQuery (HQ0 _ _) = HQ0
+modifyHistQuery (HQ1 n _ _) = HQ1 n
+modifyHistQuery (HQ2 ns _ _) = HQ2 ns
+modifyHistQuery (HQ3 t _ _) = HQ3 t
+modifyHistQuery (HQ4 n ns _ _) = HQ4 n ns
+modifyHistQuery (HQ5 n t _ _) = HQ5 n t
+modifyHistQuery (HQ6 ns t _ _) = HQ6 ns t
+modifyHistQuery (HQ7 n ns t _ _) = HQ7 n ns t

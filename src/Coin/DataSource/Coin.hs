@@ -11,8 +11,6 @@ module Coin.DataSource.Coin
 
   , getCoinHistory
   , countCoinHistory
-  , getCoinHistoryByNameSpace
-  , countCoinHistoryByNameSpace
 
   , dropCoin
   ) where
@@ -20,7 +18,7 @@ module Coin.DataSource.Coin
 import           Database.MySQL.Simple  (Only (..), execute, insertID, query,
                                          withTransaction)
 import           Yuntan.Types.HasMySQL  (MySQL)
-import           Database.MySQL.Simple.Param
+import           Database.MySQL.Simple.QueryParams
 
 import           Control.Monad          (void)
 import           Control.Monad.IO.Class (liftIO)
@@ -112,52 +110,33 @@ saveCoin namespace name coin prefix conn = withTransaction conn $ do
 
 
 getCoinList :: ListQuery -> From -> Size -> MySQL [Coin]
-getCoinList lq from size prefix conn = query conn sql $ listQueryToAction lq ++ [render from, render size]
+getCoinList lq from size prefix conn = query conn sql $ lq2A lq ++ renderParams (from, size)
   where sql = fromString $ concat [ "SELECT"
                                   , " `type`, `score`, `pre_score`, `namespace`, `desc`, `created_at`"
                                   , " FROM `", prefix, "_coins_history`"
-                                  , " WHERE ", listQueryToTemplate lq, " ORDER BY `id` DESC LIMIT ?,?"
+                                  , " WHERE ", lq2T lq, " ORDER BY `id` DESC LIMIT ?,?"
                                   ]
 
 countCoin :: ListQuery -> MySQL Int64
-countCoin lq prefix conn = maybe 0 fromOnly . listToMaybe <$> query conn sql (listQueryToAction lq)
-  where sql = fromString $ concat [ "SELECT count(*) FROM `", prefix, "_coins_history` WHERE ", listQueryToTemplate lq]
+countCoin lq prefix conn = maybe 0 fromOnly . listToMaybe <$> query conn sql (lq2A lq)
+  where sql = fromString $ concat [ "SELECT count(*) FROM `", prefix, "_coins_history` WHERE ", lq2T lq]
 
-getCoinHistory :: Int64 -> Int64 -> From -> Size -> MySQL [CoinHistory]
-getCoinHistory start end from size prefix conn = query conn sql (start, end, from ,size)
+getCoinHistory :: HistQuery -> From -> Size -> MySQL [CoinHistory]
+getCoinHistory hq from size prefix conn = query conn sql $ hq2A hq ++ renderParams (from ,size)
   where sql = fromString $ concat [ "SELECT"
                                   , " `name`, `namespace`, `type`, `score`, `pre_score`, `desc`, `created_at`"
                                   , " FROM `", prefix, "_coins_history`"
-                                  , " WHERE `created_at` > ? AND `created_at` < ?"
+                                  , " WHERE ", hq2T hq
                                   , " ORDER BY `id` DESC LIMIT ?,?"
                                   ]
 
-countCoinHistory :: Int64 -> Int64 -> MySQL Int64
-countCoinHistory start end prefix conn =
-  maybe 0 fromOnly . listToMaybe <$> query conn sql (start, end)
+countCoinHistory :: HistQuery -> MySQL Int64
+countCoinHistory hq prefix conn =
+  maybe 0 fromOnly . listToMaybe <$> query conn sql (hq2A hq)
   where sql = fromString $ concat [ "SELECT"
                                   , " count(*)"
                                   , " FROM `", prefix, "_coins_history`"
-                                  , " WHERE `created_at` > ? AND `created_at` < ?"
-                                  ]
-
-
-getCoinHistoryByNameSpace :: String -> Int64 -> Int64 -> From -> Size -> MySQL [CoinHistory]
-getCoinHistoryByNameSpace namespace start end from size prefix conn = query conn sql (namespace, start, end, from ,size)
-  where sql = fromString $ concat [ "SELECT"
-                                  , " `name`, `namespace`, `type`, `score`, `pre_score`, `desc`, `created_at`"
-                                  , " FROM `", prefix, "_coins_history`"
-                                  , " WHERE `namespace` = ? AND `created_at` > ? AND `created_at` < ?"
-                                  , " ORDER BY `id` DESC LIMIT ?,?"
-                                  ]
-
-countCoinHistoryByNameSpace :: String -> Int64 -> Int64 -> MySQL Int64
-countCoinHistoryByNameSpace namespace start end prefix conn =
-  maybe 0 fromOnly . listToMaybe <$> query conn sql (namespace, start, end)
-  where sql = fromString $ concat [ "SELECT"
-                                  , " count(*)"
-                                  , " FROM `", prefix, "_coins_history`"
-                                  , " WHERE `namespace` = ? AND `created_at` > ? AND `created_at` < ?"
+                                  , " WHERE ", hq2T hq
                                   ]
 
 dropCoin :: String -> MySQL ()
