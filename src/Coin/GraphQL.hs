@@ -32,6 +32,7 @@ import           Yuntan.Utils.GraphQL  (getIntValue, getTextValue, value')
 --   score: Int
 --   pre_score: Int
 --   type: String
+--   namespace: String
 --   desc: String
 --   created_at: Int
 -- }
@@ -80,6 +81,7 @@ coin :: HasMySQL u => Coin -> [Resolver (GenHaxl u)]
 coin c = [ scalar "score" $ getCoinScore c
          , scalar "pre_score" $ getCoinPreScore c
          , scalar "type" . show $ getCoinType c
+         , scalar "namespace" $ getCoinNameSpace c
          , scalar "desc" $ getCoinDesc c
          , scalar "created_at" $ getCoinCreatedAt c
          ]
