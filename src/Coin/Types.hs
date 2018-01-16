@@ -151,10 +151,10 @@ fieldListT [x] = fieldT x
 fieldListT (x:xs) = fieldT x ++ " AND " ++ fieldListT xs
 
 lq2T :: ListQuery -> String
-lq2T (LQ1 _) = fieldListT ["name"]
-lq2T (LQ2 _ _) = fieldListT ["name", "type"]
-lq2T (LQ3 _ _) = fieldListT ["namespace", "name"]
-lq2T (LQ4 _ _ _) = fieldListT ["namespace", "name", "type"]
+lq2T LQ1{} = fieldListT ["name"]
+lq2T LQ2{} = fieldListT ["name", "type"]
+lq2T LQ3{} = fieldListT ["namespace", "name"]
+lq2T LQ4{} = fieldListT ["namespace", "name", "type"]
 
 lq2A :: ListQuery -> [Action]
 lq2A (LQ1 n) = renderParams (Only n)
@@ -179,14 +179,14 @@ fieldHistT [] = "`created_at` > ? AND `created_at` < ?"
 fieldHistT (x:xs) = fieldT x ++ " AND " ++ fieldListT xs
 
 hq2T :: HistQuery -> String
-hq2T (HQ0 _ _) = fieldHistT []
-hq2T (HQ1 _ _ _) = fieldHistT ["name"]
-hq2T (HQ2 _ _ _) = fieldHistT ["namespace"]
-hq2T (HQ3 _ _ _) = fieldHistT ["type"]
-hq2T (HQ4 _ _ _ _) = fieldHistT ["namespace", "name"]
-hq2T (HQ5 _ _ _ _) = fieldHistT ["name", "type"]
-hq2T (HQ6 _ _ _ _) = fieldHistT ["namespace", "type"]
-hq2T (HQ7 _ _ _ _ _) = fieldHistT ["namespace", "name", "type"]
+hq2T HQ0{} = fieldHistT []
+hq2T HQ1{} = fieldHistT ["name"]
+hq2T HQ2{} = fieldHistT ["namespace"]
+hq2T HQ3{} = fieldHistT ["type"]
+hq2T HQ4{} = fieldHistT ["namespace", "name"]
+hq2T HQ5{} = fieldHistT ["name", "type"]
+hq2T HQ6{} = fieldHistT ["namespace", "type"]
+hq2T HQ7{} = fieldHistT ["namespace", "name", "type"]
 
 hq2A :: HistQuery -> [Action]
 hq2A (HQ0 s e) = renderParams (s, e)
