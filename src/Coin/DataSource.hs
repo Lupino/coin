@@ -37,15 +37,15 @@ import           Control.Concurrent.QSem
 
 data CoinReq a where
   MergeData        :: CoinReq ()
-  GetScore         :: String -> CoinReq Score
-  SaveCoin         :: String -> String -> Coin -> CoinReq Score
+  GetScore         :: Name -> CoinReq Score
+  SaveCoin         :: NameSpace -> Name -> Coin -> CoinReq Score
   GetCoinList      :: ListQuery -> From -> Size -> CoinReq [Coin]
   CountCoin        :: ListQuery -> CoinReq Int64
-  GetInfo          :: String -> CoinReq ByteString
-  SetInfo          :: String -> ByteString -> CoinReq ()
+  GetInfo          :: Name -> CoinReq ByteString
+  SetInfo          :: Name -> ByteString -> CoinReq ()
   GetCoinHistory   :: HistQuery -> From -> Size -> CoinReq [CoinHistory]
   CountCoinHistory :: HistQuery -> CoinReq Int64
-  DropCoin         :: String -> CoinReq ()
+  DropCoin         :: Name -> CoinReq ()
 
   deriving (Typeable)
 

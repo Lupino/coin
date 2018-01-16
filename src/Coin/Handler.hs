@@ -89,7 +89,7 @@ getCoinListWithNameSpaceHandler = do
     Nothing -> coinListHandler (LQ3 namespace)
     Just t  -> coinListHandler (LQ4 t namespace)
 
-coinListHandler :: HasMySQL u => (String -> ListQuery) -> ActionH u ()
+coinListHandler :: HasMySQL u => (Name -> ListQuery) -> ActionH u ()
 coinListHandler lq = do
   (from, size) <- paramPage
   name <- param "name"

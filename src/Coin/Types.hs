@@ -23,14 +23,18 @@ module Coin.Types
   , HistQuery (..)
   , hq2T
   , hq2A
+
+  , Name
+  , NameSpace
   ) where
 
 import           Database.MySQL.Simple.QueryResults (QueryResults, convertError,
                                                      convertResults)
-import           Database.MySQL.Simple.Result       (convert)
-import           Database.MySQL.Simple.Param (Action)
+import           Database.MySQL.Simple.Result       (convert, Result (..))
+import           Database.MySQL.Simple.Param (Action, Param (..))
 import           Database.MySQL.Simple.QueryParams
 import           Database.MySQL.Simple  (Only (..))
+import           Web.Scotty.Trans (Parsable (..))
 
 import           Data.Aeson                         (ToJSON (..),
                                                      Value (String),
@@ -43,11 +47,56 @@ import           Data.Text                          (Text)
 import           Data.Text.Encoding                 (encodeUtf8)
 import           GHC.Generics                       (Generic)
 import           Text.Read                          (readMaybe)
+import           Data.String (IsString (..))
 
 type From        = Int64
 type Size        = Int64
 type Score       = Int64
 type CreatedAt   = Int64
+
+newtype Name = Name {unName :: String}
+  deriving (Generic, Eq, Show)
+
+instance Hashable Name
+
+instance IsString Name where
+  fromString = Name
+
+instance Param Name where
+  render = render . unName
+
+instance Result Name where
+  convert f = Name . convert f
+
+instance ToJSON Name where
+  toJSON = toJSON . unName
+
+instance Parsable Name where
+  parseParam t = case parseParam t of
+                   Left e -> Left e
+                   Right v -> Right $ Name v
+
+newtype NameSpace = NS {unNS :: String}
+  deriving (Generic, Eq, Show)
+
+instance Hashable NameSpace
+
+instance IsString NameSpace where
+  fromString = NS
+
+instance Param NameSpace where
+  render = render . unNS
+
+instance Result NameSpace where
+  convert f = NS . convert f
+
+instance ToJSON NameSpace where
+  toJSON = toJSON . unNS
+
+instance Parsable NameSpace where
+  parseParam t = case parseParam t of
+                   Left e -> Left e
+                   Right v -> Right $ NS v
 
 data CoinType = Incr | Decr
   deriving (Generic, Eq, Show, Read)
@@ -66,7 +115,7 @@ readType _      = Nothing
 data Coin = Coin { getCoinType      :: CoinType
                  , getCoinScore     :: Score
                  , getCoinPreScore  :: Score
-                 , getCoinNameSpace :: String
+                 , getCoinNameSpace :: NameSpace
                  , getCoinDesc      :: Text
                  , getCoinCreatedAt :: CreatedAt
                  }
@@ -105,7 +154,7 @@ instance ToJSON Coin where
 
 data CoinHistory = CoinHistory
   { hCoinName      :: String
-  , hCoinNameSpace :: String
+  , hCoinNameSpace :: NameSpace
   , hCoinType      :: CoinType
   , hCoinScore     :: Score
   , hCoinPreScore  :: Score
@@ -140,9 +189,6 @@ instance ToJSON CoinHistory where
 
 decode :: Text -> Value
 decode v = fromMaybe (String v) $ decodeStrict $ encodeUtf8 v
-
-type Name = String
-type NameSpace = String
 
 data ListQuery = LQ1 Name
                | LQ2 CoinType Name

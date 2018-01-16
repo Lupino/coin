@@ -22,16 +22,16 @@ import           Coin.DataSource
 import           Coin.Types
 import           Yuntan.Types.HasMySQL (HasMySQL)
 
-getScore         :: HasMySQL u => String -> GenHaxl u Score
-getInfo          :: HasMySQL u => String -> GenHaxl u Value
-setInfo          :: HasMySQL u => String -> Value -> GenHaxl u ()
-saveCoin         :: HasMySQL u => String -> String -> Coin -> GenHaxl u Score
+getScore         :: HasMySQL u => Name -> GenHaxl u Score
+getInfo          :: HasMySQL u => Name -> GenHaxl u Value
+setInfo          :: HasMySQL u => Name -> Value -> GenHaxl u ()
+saveCoin         :: HasMySQL u => NameSpace -> Name -> Coin -> GenHaxl u Score
 getCoinList      :: HasMySQL u => ListQuery -> From -> Size -> GenHaxl u [Coin]
 countCoin        :: HasMySQL u => ListQuery -> GenHaxl u Int64
 mergeData        :: HasMySQL u => GenHaxl u ()
 getCoinHistory   :: HasMySQL u => HistQuery -> From -> Size -> GenHaxl u [CoinHistory]
 countCoinHistory :: HasMySQL u => HistQuery -> GenHaxl u Int64
-dropCoin         :: HasMySQL u => String -> GenHaxl u ()
+dropCoin         :: HasMySQL u => Name -> GenHaxl u ()
 
 getScore n           = dataFetch (GetScore n)
 getInfo n            = fromMaybe Null . decodeStrict <$> dataFetch (GetInfo n)
