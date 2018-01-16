@@ -153,15 +153,6 @@ saveCoinHandler = do
       ok "score" ret
     Nothing -> errBadRequest "Invalid type"
 
-readType :: String -> Maybe CoinType
-readType "Incr" = Just Incr
-readType "Decr" = Just Decr
-readType "incr" = Just Incr
-readType "decr" = Just Decr
-readType "INCR" = Just Incr
-readType "DECR" = Just Decr
-readType _      = Nothing
-
 graphqlHandler :: HasMySQL u => ActionH u ()
 graphqlHandler = do
   query <- param "query"

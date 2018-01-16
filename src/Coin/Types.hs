@@ -12,6 +12,7 @@ module Coin.Types
   , CoinType (..)
   , Coin (..)
   , zeroCoin
+  , readType
 
   , CoinHistory (..)
 
@@ -52,6 +53,15 @@ data CoinType = Incr | Decr
   deriving (Generic, Eq, Show, Read)
 
 instance Hashable CoinType
+
+readType :: String -> Maybe CoinType
+readType "Incr" = Just Incr
+readType "Decr" = Just Decr
+readType "incr" = Just Incr
+readType "decr" = Just Decr
+readType "INCR" = Just Incr
+readType "DECR" = Just Decr
+readType _      = Nothing
 
 data Coin = Coin { getCoinType      :: CoinType
                  , getCoinScore     :: Score

@@ -23,12 +23,12 @@ import           Yuntan.Utils.GraphQL  (getIntValue, getTextValue, value')
 --   coin(name: String!): Coin
 -- }
 -- type Coin {
---   history(from: Int, size: Int): [CoinHistory]
---   total: Int
+--   history(namespace: String, type: String, from: Int, size: Int): [CoinItem]
+--   total(namespace: String, type: String): Int
 --   score: Int
 --   info: CoinInfo
 -- }
--- type CoinHistory {
+-- type CoinItem {
 --   score: Int
 --   pre_score: Int
 --   type: String
@@ -37,7 +37,7 @@ import           Yuntan.Utils.GraphQL  (getIntValue, getTextValue, value')
 --   created_at: Int
 -- }
 -- type CoinInfo {
---
+--   _all: JSON
 -- }
 
 schema :: HasMySQL u => Schema (GenHaxl u)
@@ -65,17 +65,31 @@ score n name = scalarA n . const $ getScore name
 info :: HasMySQL u => Name -> String -> Resolver (GenHaxl u)
 info n name = object' n $ value' <$> getInfo name
 
+getType argv = case getTextValue "type" argv of
+                 Nothing -> Nothing
+                 Just t -> readType $ unpack t
+
+getNameSpace argv = case getTextValue "namespace" argv of
+                      Nothing -> Nothing
+                      Just ns -> Just $ unpack ns
+
+getListQuery argv = case (getNameSpace argv, getType argv) of
+                      (Nothing, Nothing) -> LQ1
+                      (Nothing, Just t)  -> LQ2 t
+                      (Just ns, Nothing) -> LQ3 ns
+                      (Just ns, Just t)  -> LQ4 t ns
 
 coins :: HasMySQL u => Name -> String -> Resolver (GenHaxl u)
 coins n name = arrayA' n $ \argv -> do
   let from = fromMaybe 0  $ getIntValue "from" argv
       size = fromMaybe 10 $ getIntValue "size" argv
+      lq = getListQuery argv
 
-  map coin <$> getCoinList (LQ1 name) from size
+  map coin <$> getCoinList (lq name) from size
 
 
 total :: HasMySQL u => Name -> String -> Resolver (GenHaxl u)
-total n name = scalarA n . const $ countCoin (LQ1 name)
+total n name = scalarA n $ \argv -> countCoin (getListQuery argv name)
 
 coin :: HasMySQL u => Coin -> [Resolver (GenHaxl u)]
 coin c = [ scalar "score" $ getCoinScore c
