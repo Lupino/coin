@@ -16,15 +16,32 @@ import           Data.List.NonEmpty    (NonEmpty ((:|)), fromList)
 import           Data.Maybe            (fromMaybe)
 import           Data.Text             (unpack)
 import           Haxl.Core             (GenHaxl)
+import           Haxl.Core.Monad       (unsafeLiftIO)
 import           Yuntan.Types.HasMySQL (HasMySQL)
+import           Data.UnixTime
 
 import           Yuntan.Utils.GraphQL  (getIntValue, getTextValue, value')
+
 -- type Query {
 --   coin(name: String!): Coin
+--   history(
+--        namespace: String
+--      , name: String
+--      , type: Type
+--      , start_time: Int
+--      , end_time: Int
+--      , from: Int
+--      , size: Int): [CoinItem]
+--   history_count(
+--        namespace: String
+--      , name: String
+--      , type: Type
+--      , start_time: Int
+--      , end_time: Int): [CoinItem]
 -- }
 -- type Coin {
---   history(namespace: String, type: String, from: Int, size: Int): [CoinItem]
---   total(namespace: String, type: String): Int
+--   history(namespace: String, type: Type, from: Int, size: Int): [CoinItem]
+--   total(namespace: String, type: Type): Int
 --   score: Int
 --   info: CoinInfo
 -- }
@@ -41,22 +58,22 @@ import           Yuntan.Utils.GraphQL  (getIntValue, getTextValue, value')
 -- }
 
 schema :: HasMySQL u => Schema (GenHaxl u)
-schema = coin_ :| []
+schema = coin_ :| [history, historyCount_]
 
 schemaByUser :: HasMySQL u => String -> Schema (GenHaxl u)
 schemaByUser n = fromList (coin__ n)
 
 coin_ :: HasMySQL u => Resolver (GenHaxl u)
 coin_ = objectA "coin" $ \argv ->
-  case getTextValue "name" argv of
+  case getName argv of
     Nothing   -> empty
-    Just name -> coin__ $ unpack name
+    Just name -> coin__ name
 
 coin__ :: HasMySQL u => String -> [Resolver (GenHaxl u)]
 coin__ n = [ score "score"   n
            , info  "info"    n
            , coins "history" n
-           , total "total"   n
+           , historyCount "history_count" n
            ]
 
 score :: HasMySQL u => Name -> String -> Resolver (GenHaxl u)
@@ -73,6 +90,10 @@ getNameSpace argv = case getTextValue "namespace" argv of
                       Nothing -> Nothing
                       Just ns -> Just $ unpack ns
 
+getName argv = case getTextValue "name" argv of
+                 Nothing -> Nothing
+                 Just n -> Just $ unpack n
+
 getListQuery argv = case (getNameSpace argv, getType argv) of
                       (Nothing, Nothing) -> LQ1
                       (Nothing, Just t)  -> LQ2 t
@@ -87,9 +108,8 @@ coins n name = arrayA' n $ \argv -> do
 
   map coin <$> getCoinList (lq name) from size
 
-
-total :: HasMySQL u => Name -> String -> Resolver (GenHaxl u)
-total n name = scalarA n $ \argv -> countCoin (getListQuery argv name)
+historyCount :: HasMySQL u => Name -> String -> Resolver (GenHaxl u)
+historyCount n name = scalarA n $ \argv -> countCoin (getListQuery argv name)
 
 coin :: HasMySQL u => Coin -> [Resolver (GenHaxl u)]
 coin c = [ scalar "score" $ getCoinScore c
@@ -99,3 +119,44 @@ coin c = [ scalar "score" $ getCoinScore c
          , scalar "desc" $ getCoinDesc c
          , scalar "created_at" $ getCoinCreatedAt c
          ]
+
+getHistQuery argv = case (getNameSpace argv, getName argv, getType argv) of
+                      (Nothing, Nothing, Nothing) -> HQ0
+                      (Nothing, Just n,  Nothing) -> HQ1 n
+                      (Just ns, Nothing, Nothing) -> HQ2 ns
+                      (Nothing, Nothing, Just t)  -> HQ3 t
+                      (Just ns, Just n,  Nothing) -> HQ4 n ns
+                      (Nothing, Just n,  Just t)  -> HQ5 n t
+                      (Just ns, Nothing, Just t)  -> HQ6 ns t
+                      (Just ns, Just n,  Just t)  -> HQ7 n ns t
+
+
+history :: HasMySQL u => Resolver (GenHaxl u)
+history = arrayA' "history" $ \argv -> do
+  now <- unsafeLiftIO $ read . show . toEpochTime <$> getUnixTime
+  let from = fromMaybe 0  $ getIntValue "from" argv
+      size = fromMaybe 10 $ getIntValue "size" argv
+      startTime = fromMaybe 0 $ getIntValue "start_time" argv
+      endTime = fromMaybe now $ getIntValue "end_time" argv
+      hq = getHistQuery argv
+
+  map history_ <$> getCoinHistory (hq startTime endTime) from size
+
+history_ :: HasMySQL u => CoinHistory -> [Resolver (GenHaxl u)]
+history_ h =
+  [ scalar "name" $ hCoinName h
+  , scalar "score" $ hCoinScore h
+  , scalar "pre_score" $ hCoinPreScore h
+  , scalar "type" . show $ hCoinType h
+  , scalar "namespace" $ hCoinNameSpace h
+  , scalar "desc" $ hCoinDesc h
+  , scalar "created_at" $ hCoinCreatedAt h
+  ]
+
+historyCount_ :: HasMySQL u => Resolver (GenHaxl u)
+historyCount_ = scalarA "history_count" $ \argv -> do
+  now <- unsafeLiftIO $ read . show . toEpochTime <$> getUnixTime
+  let startTime = fromMaybe 0 $ getIntValue "start_time" argv
+      endTime = fromMaybe now $ getIntValue "end_time" argv
+      hq = getHistQuery argv
+  countCoinHistory (hq startTime endTime)
