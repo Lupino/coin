@@ -99,7 +99,7 @@ application = do
   get  "/api/coins/:name/info/"  getInfoHandler
   put  "/api/coins/:name/info/"  setInfoHandler
   get  "/api/coins/:name/"       getCoinListHandler
-  get  "/api/coins/:name/namespace/:namespace/" getCoinListByNameSpaceHandler
+  get  "/api/coins/:name/namespace/:namespace/" getCoinListWithNameSpaceHandler
   post "/api/coins/:name/drop/"  dropCoinHandler
   get  "/api/coins_history/"     getCoinHistoryHandler
   get  "/api/coins_history/:namespace/" getCoinHistoryByNameSpaceHandler

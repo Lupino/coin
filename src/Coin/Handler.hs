@@ -6,7 +6,7 @@ module Coin.Handler
   , getInfoHandler
   , setInfoHandler
   , getCoinListHandler
-  , getCoinListByNameSpaceHandler
+  , getCoinListWithNameSpaceHandler
   , saveCoinHandler
   , graphqlHandler
   , graphqlByUserHandler
@@ -81,8 +81,8 @@ getCoinListHandler = do
     Nothing -> coinListHandler LQ1
     Just t  -> coinListHandler (LQ2 t)
 
-getCoinListByNameSpaceHandler :: HasMySQL u => ActionH u ()
-getCoinListByNameSpaceHandler = do
+getCoinListWithNameSpaceHandler :: HasMySQL u => ActionH u ()
+getCoinListWithNameSpaceHandler = do
   namespace <- param "namespace"
   tp <- readType <$> param "type" `rescue` (\_ -> return (""::String))
   case tp of
