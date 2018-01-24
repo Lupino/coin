@@ -232,7 +232,7 @@ instance Hashable HistQuery
 
 fieldHistT :: [String] -> String
 fieldHistT [] = "`created_at` > ? AND `created_at` < ?"
-fieldHistT (x:xs) = fieldT x ++ " AND " ++ fieldListT xs
+fieldHistT (x:xs) = fieldT x ++ " AND " ++ fieldHistT xs
 
 hq2T :: HistQuery -> String
 hq2T HQ0{} = fieldHistT []
