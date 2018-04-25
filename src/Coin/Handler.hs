@@ -33,7 +33,6 @@ import           Yuntan.Types.Scotty     (ActionH)
 import           Yuntan.Utils.Scotty     (errBadRequest, ok, okListResult)
 
 import           Data.Int                (Int64)
-import           Haxl.Core               (GenHaxl)
 import           Yuntan.Types.HasMySQL   (HasMySQL)
 
 
