@@ -9,17 +9,17 @@ module Coin.GraphQL
 import           Coin.API
 import           Coin.Types
 import           Control.Applicative   (empty)
-import qualified Data.GraphQL.AST as G (Name)
+import qualified Data.GraphQL.AST      as G (Name)
 import           Data.GraphQL.Schema   (Resolver, Schema, arrayA', object',
                                         objectA, scalar, scalarA)
 import           Data.List.NonEmpty    (NonEmpty ((:|)), fromList)
 import           Data.Maybe            (fromMaybe)
+import           Data.String           (fromString)
 import           Data.Text             (unpack)
+import           Data.UnixTime
 import           Haxl.Core             (GenHaxl)
 import           Haxl.Core.Monad       (unsafeLiftIO)
 import           Yuntan.Types.HasMySQL (HasMySQL)
-import           Data.UnixTime
-import           Data.String           (fromString)
 
 import           Yuntan.Utils.GraphQL  (getIntValue, getTextValue, value')
 
@@ -85,7 +85,7 @@ info n name = object' n $ value' <$> getInfo name
 
 getType argv = case getTextValue "type" argv of
                  Nothing -> Nothing
-                 Just t -> readType $ unpack t
+                 Just t  -> readType $ unpack t
 
 getNameSpace argv = case getTextValue "namespace" argv of
                       Nothing -> Nothing
@@ -93,7 +93,7 @@ getNameSpace argv = case getTextValue "namespace" argv of
 
 getName argv = case getTextValue "name" argv of
                  Nothing -> Nothing
-                 Just n -> Just . fromString $ unpack n
+                 Just n  -> Just . fromString $ unpack n
 
 getListQuery argv = case (getNameSpace argv, getType argv) of
                       (Nothing, Nothing) -> LQ1
@@ -121,27 +121,29 @@ coin c = [ scalar "score" $ getCoinScore c
          , scalar "created_at" $ getCoinCreatedAt c
          ]
 
-getHistQuery argv = case (getNameSpace argv, getName argv, getType argv) of
-                      (Nothing, Nothing, Nothing) -> HQ0
-                      (Nothing, Just n,  Nothing) -> HQ1 n
-                      (Just ns, Nothing, Nothing) -> HQ2 ns
-                      (Nothing, Nothing, Just t)  -> HQ3 t
-                      (Just ns, Just n,  Nothing) -> HQ4 n ns
-                      (Nothing, Just n,  Just t)  -> HQ5 n t
-                      (Just ns, Nothing, Just t)  -> HQ6 ns t
-                      (Just ns, Just n,  Just t)  -> HQ7 n ns t
+getHistQuery' argv =
+  case (getNameSpace argv, getName argv, getType argv) of
+    (Nothing, Nothing, Nothing) -> HQ0
+    (Nothing, Just n,  Nothing) -> HQ1 n
+    (Just ns, Nothing, Nothing) -> HQ2 ns
+    (Nothing, Nothing, Just t)  -> HQ3 t
+    (Just ns, Just n,  Nothing) -> HQ4 n ns
+    (Nothing, Just n,  Just t)  -> HQ5 n t
+    (Just ns, Nothing, Just t)  -> HQ6 ns t
+    (Just ns, Just n,  Just t)  -> HQ7 n ns t
 
+getHistQuery now argv = getHistQuery' argv startTime endTime
+  where startTime = fromMaybe 0 $ getIntValue "start_time" argv
+        endTime = fromMaybe now $ getIntValue "end_time" argv
 
 history :: HasMySQL u => Resolver (GenHaxl u)
 history = arrayA' "history" $ \argv -> do
   now <- unsafeLiftIO $ read . show . toEpochTime <$> getUnixTime
   let from = fromMaybe 0  $ getIntValue "from" argv
       size = fromMaybe 10 $ getIntValue "size" argv
-      startTime = fromMaybe 0 $ getIntValue "start_time" argv
-      endTime = fromMaybe now $ getIntValue "end_time" argv
-      hq = getHistQuery argv
+      hq = getHistQuery now argv
 
-  map history_ <$> getCoinHistory (hq startTime endTime) from size
+  map history_ <$> getCoinHistory hq from size
 
 history_ :: HasMySQL u => CoinHistory -> [Resolver (GenHaxl u)]
 history_ h =
@@ -157,7 +159,4 @@ history_ h =
 historyCount_ :: HasMySQL u => Resolver (GenHaxl u)
 historyCount_ = scalarA "history_count" $ \argv -> do
   now <- unsafeLiftIO $ read . show . toEpochTime <$> getUnixTime
-  let startTime = fromMaybe 0 $ getIntValue "start_time" argv
-      endTime = fromMaybe now $ getIntValue "end_time" argv
-      hq = getHistQuery argv
-  countCoinHistory (hq startTime endTime)
+  countCoinHistory (getHistQuery now argv)
