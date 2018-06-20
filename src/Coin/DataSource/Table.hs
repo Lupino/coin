@@ -48,11 +48,27 @@ updateTable_1510630539 prefix conn = do
     , " ADD KEY `namespace` (`namespace`)"
     ]
 
+updateTable_20180620 :: MySQL ()
+updateTable_20180620 prefix conn = do
+  void $ execute_ conn . fromString $ concat
+    [ "ALTER TABLE `", prefix, "_coins_history`"
+    , " MODIFY COLUMN `score` bigint(20) unsigned DEFAULT '0'"
+    ]
+  void $ execute_ conn . fromString $ concat
+    [ "ALTER TABLE `", prefix, "_coins_history`"
+    , " MODIFY COLUMN `pre_score` bigint(20) unsigned DEFAULT '0'"
+    ]
+  void $ execute_ conn . fromString $ concat
+    [ "ALTER TABLE `", prefix, "_coins`"
+    , " MODIFY COLUMN `score` bigint(20) unsigned DEFAULT '0'"
+    ]
+
 
 versionList :: VersionList
 versionList =
   [ (1, [createCoinTable, createCoinHistoryTable])
   , (2, [updateTable_1510630539])
+  , (3, [updateTable_20180620])
   ]
 
 mergeData :: MySQL ()
