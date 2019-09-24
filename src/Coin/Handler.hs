@@ -36,20 +36,20 @@ import           Data.Int                (Int64)
 import           Yuntan.Types.HasMySQL   (HasMySQL)
 
 
-getScoreHandler :: HasMySQL u => ActionH u ()
+getScoreHandler :: HasMySQL u => ActionH u w ()
 getScoreHandler = do
   name <- param "name"
   score <- lift $ getScore name
   ok "score" score
 
-getInfoHandler :: HasMySQL u => ActionH u ()
+getInfoHandler :: HasMySQL u => ActionH u w ()
 getInfoHandler = do
   name  <- param "name"
   inf  <- lift $ getInfo name
   score <- lift $ getScore name
   json $ object [ "score" .= score, "info" .= inf, "name" .= name ]
 
-setInfoHandler :: HasMySQL u => ActionH u ()
+setInfoHandler :: HasMySQL u => ActionH u w ()
 setInfoHandler = do
   name  <- param "name"
   wb <- body
@@ -60,27 +60,27 @@ setInfoHandler = do
       status status204
       raw LB.empty
 
-dropCoinHandler :: HasMySQL u => ActionH u ()
+dropCoinHandler :: HasMySQL u => ActionH u w ()
 dropCoinHandler = do
   name  <- param "name"
   lift $ dropCoin name
   status status204
   raw LB.empty
 
-paramPage :: ActionH u (From, Size)
+paramPage :: ActionH u w (From, Size)
 paramPage = do
   from <- param "from" `rescue` (\_ -> return (0::From))
   size <- param "size" `rescue` (\_ -> return (10::Size))
   return (from, size)
 
-getCoinListHandler :: HasMySQL u => ActionH u ()
+getCoinListHandler :: HasMySQL u => ActionH u w ()
 getCoinListHandler = do
   tp <- readType <$> param "type" `rescue` (\_ -> return (""::String))
   case tp of
     Nothing -> coinListHandler LQ1
     Just t  -> coinListHandler (LQ2 t)
 
-getCoinListWithNameSpaceHandler :: HasMySQL u => ActionH u ()
+getCoinListWithNameSpaceHandler :: HasMySQL u => ActionH u w ()
 getCoinListWithNameSpaceHandler = do
   namespace <- param "namespace"
   tp <- readType <$> param "type" `rescue` (\_ -> return (""::String))
@@ -88,7 +88,7 @@ getCoinListWithNameSpaceHandler = do
     Nothing -> coinListHandler (LQ3 namespace)
     Just t  -> coinListHandler (LQ4 t namespace)
 
-coinListHandler :: HasMySQL u => (Name -> ListQuery) -> ActionH u ()
+coinListHandler :: HasMySQL u => (Name -> ListQuery) -> ActionH u w ()
 coinListHandler lq = do
   (from, size) <- paramPage
   name <- param "name"
@@ -101,14 +101,14 @@ coinListHandler lq = do
                                   , getResult = ret
                                   }
 
-getCoinHistoryHandler :: HasMySQL u => ActionH u ()
+getCoinHistoryHandler :: HasMySQL u => ActionH u w ()
 getCoinHistoryHandler = do
   tp <- readType <$> param "type" `rescue` (\_ -> return (""::String))
   case tp of
     Nothing -> coinHistoryHandler HQ0
     Just t  -> coinHistoryHandler (HQ3 t)
 
-getCoinHistoryByNameSpaceHandler :: HasMySQL u => ActionH u ()
+getCoinHistoryByNameSpaceHandler :: HasMySQL u => ActionH u w ()
 getCoinHistoryByNameSpaceHandler = do
   namespace <- param "namespace"
   tp <- readType <$> param "type" `rescue` (\_ -> return (""::String))
@@ -116,7 +116,7 @@ getCoinHistoryByNameSpaceHandler = do
     Nothing -> coinHistoryHandler (HQ2 namespace)
     Just t  -> coinHistoryHandler (HQ6 namespace t)
 
-coinHistoryHandler :: HasMySQL u => (Int64 -> Int64 -> HistQuery) -> ActionH u ()
+coinHistoryHandler :: HasMySQL u => (Int64 -> Int64 -> HistQuery) -> ActionH u w ()
 coinHistoryHandler hq = do
   (from, size) <- paramPage
   startTime <- param "start_time" `rescue` (\_ -> return 0)
@@ -130,7 +130,7 @@ coinHistoryHandler hq = do
                                   , getResult = ret
                                   }
 
-saveCoinHandler :: HasMySQL u => ActionH u ()
+saveCoinHandler :: HasMySQL u => ActionH u w ()
 saveCoinHandler = do
   name  <- param "name"
   namespace <- param "namespace" `rescue` (\_ -> return "default")
@@ -152,13 +152,13 @@ saveCoinHandler = do
       ok "score" ret
     Nothing -> errBadRequest "Invalid type"
 
-graphqlHandler :: HasMySQL u => ActionH u ()
+graphqlHandler :: HasMySQL u => ActionH u w ()
 graphqlHandler = do
   query <- param "query"
   ret <- lift $ graphql schema query
   json ret
 
-graphqlByUserHandler :: HasMySQL u => ActionH u ()
+graphqlByUserHandler :: HasMySQL u => ActionH u w ()
 graphqlByUserHandler = do
   query <- param "query"
   name  <- param "name"

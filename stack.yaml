@@ -2,15 +2,14 @@
 # For more information, see: http://docs.haskellstack.org/en/stable/yaml_configuration/
 
 # Specifies the GHC version and set of packages available (e.g., lts-3.5, nightly-2015-09-21, ghc-7.10.2)
-resolver: lts-10.2
+resolver: lts-14.6
 
 # Local packages, usually specified by relative directory name
 packages:
 - '.'
-- location:
-    git: https://github.com/Lupino/yuntan-common.git
-    commit: 2ec5bf2176f327da715016ee4d93cc317870b9d5
-  extra-dep: true
+extra-deps:
+- git: https://github.com/Lupino/yuntan-common.git
+  commit: d33d75348877c1339b34e20abcff6ed4df567adf
   subdirs:
   - yuntan-common-scotty
   - yuntan-common-scotty-type
@@ -19,10 +18,8 @@ packages:
   - yuntan-common-list-result
   - yuntan-common-result
   - yuntan-common-json
-- location:
-    git: https://github.com/jdnavarro/graphql-haskell.git
-    commit: 40f9024b51900c73bc0f65444c16022bd73820be
-  extra-dep: true
+- git: https://github.com/jdnavarro/graphql-haskell.git
+  commit: 40f9024b51900c73bc0f65444c16022bd73820be
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
 # extra-deps:
 

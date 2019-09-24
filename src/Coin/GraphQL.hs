@@ -58,29 +58,29 @@ import           Yuntan.Utils.GraphQL  (getIntValue, getTextValue, value')
 --   _all: JSON
 -- }
 
-schema :: HasMySQL u => Schema (GenHaxl u)
+schema :: HasMySQL u => Schema (GenHaxl u w)
 schema = coin_ :| [history, historyCount_]
 
-schemaByUser :: HasMySQL u => Name -> Schema (GenHaxl u)
+schemaByUser :: HasMySQL u => Name -> Schema (GenHaxl u w)
 schemaByUser n = fromList (coin__ n)
 
-coin_ :: HasMySQL u => Resolver (GenHaxl u)
+coin_ :: HasMySQL u => Resolver (GenHaxl u w)
 coin_ = objectA "coin" $ \argv ->
   case getName argv of
     Nothing   -> empty
     Just name -> coin__ name
 
-coin__ :: HasMySQL u => Name -> [Resolver (GenHaxl u)]
+coin__ :: HasMySQL u => Name -> [Resolver (GenHaxl u w)]
 coin__ n = [ score "score"   n
            , info  "info"    n
            , coins "history" n
            , historyCount "history_count" n
            ]
 
-score :: HasMySQL u => G.Name -> Name -> Resolver (GenHaxl u)
+score :: HasMySQL u => G.Name -> Name -> Resolver (GenHaxl u w)
 score n name = scalarA n . const $ getScore name
 
-info :: HasMySQL u => G.Name -> Name -> Resolver (GenHaxl u)
+info :: HasMySQL u => G.Name -> Name -> Resolver (GenHaxl u w)
 info n name = object' n $ value' <$> getInfo name
 
 getType argv = case getTextValue "type" argv of
@@ -101,7 +101,7 @@ getListQuery argv = case (getNameSpace argv, getType argv) of
                       (Just ns, Nothing) -> LQ3 ns
                       (Just ns, Just t)  -> LQ4 t ns
 
-coins :: HasMySQL u => G.Name -> Name -> Resolver (GenHaxl u)
+coins :: HasMySQL u => G.Name -> Name -> Resolver (GenHaxl u w)
 coins n name = arrayA' n $ \argv -> do
   let from = fromMaybe 0  $ getIntValue "from" argv
       size = fromMaybe 10 $ getIntValue "size" argv
@@ -109,10 +109,10 @@ coins n name = arrayA' n $ \argv -> do
 
   map coin <$> getCoinList (lq name) from size
 
-historyCount :: HasMySQL u => G.Name -> Name -> Resolver (GenHaxl u)
+historyCount :: HasMySQL u => G.Name -> Name -> Resolver (GenHaxl u w)
 historyCount n name = scalarA n $ \argv -> countCoin (getListQuery argv name)
 
-coin :: HasMySQL u => Coin -> [Resolver (GenHaxl u)]
+coin :: HasMySQL u => Coin -> [Resolver (GenHaxl u w)]
 coin c = [ scalar "score" $ getCoinScore c
          , scalar "pre_score" $ getCoinPreScore c
          , scalar "type" . show $ getCoinType c
@@ -136,7 +136,7 @@ getHistQuery now argv = getHistQuery' argv startTime endTime
   where startTime = fromMaybe 0 $ getIntValue "start_time" argv
         endTime = fromMaybe now $ getIntValue "end_time" argv
 
-history :: HasMySQL u => Resolver (GenHaxl u)
+history :: HasMySQL u => Resolver (GenHaxl u w)
 history = arrayA' "history" $ \argv -> do
   now <- unsafeLiftIO $ read . show . toEpochTime <$> getUnixTime
   let from = fromMaybe 0  $ getIntValue "from" argv
@@ -145,7 +145,7 @@ history = arrayA' "history" $ \argv -> do
 
   map history_ <$> getCoinHistory hq from size
 
-history_ :: HasMySQL u => CoinHistory -> [Resolver (GenHaxl u)]
+history_ :: HasMySQL u => CoinHistory -> [Resolver (GenHaxl u w)]
 history_ h =
   [ scalar "name" $ hCoinName h
   , scalar "score" $ hCoinScore h
@@ -156,7 +156,7 @@ history_ h =
   , scalar "created_at" $ hCoinCreatedAt h
   ]
 
-historyCount_ :: HasMySQL u => Resolver (GenHaxl u)
+historyCount_ :: HasMySQL u => Resolver (GenHaxl u w)
 historyCount_ = scalarA "history_count" $ \argv -> do
   now <- unsafeLiftIO $ read . show . toEpochTime <$> getUnixTime
   countCoinHistory (getHistQuery now argv)
