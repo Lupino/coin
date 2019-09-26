@@ -1,0 +1,25 @@
+mysql:
+  db: yuntan_coin
+  host: 127.0.0.1
+  port: 3306
+  user: root
+  pass: ""
+  numStripes: 1
+  # ^ The number of stripes (distinct sub-pools) to maintain.
+  # The smallest acceptable value is 1.
+  idleTime: 0.5
+  # ^ Amount of time for which an unused resource is kept alive.
+  # The smallest acceptable value is 0.5 seconds.
+  #
+  # The elapsed time before closing may be a little longer than
+  # requested, as the reaper thread wakes at 1-second intervals.
+  maxResources: 1
+  # ^ Maximum number of resources to maintain per stripe.  The
+  # smallest acceptable value is 1.
+  #
+  # Requests for resources will block if this limit is reached on a
+  # single stripe, even if other stripes have idle resources
+  # available.
+
+  numThreads: 1
+  # numThreads of fetch async for haxl
