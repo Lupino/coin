@@ -22,7 +22,7 @@ import           Data.Int               (Int64)
 import           Data.Maybe             (fromMaybe)
 import           Data.String            (fromString)
 import           Data.UnixTime
-import           Database.PSQL.Types    (From, Only (..), PSQL, Size, count,
+import           Database.PSQL.Types    (From, Only (..), PSQL, Size, as, count,
                                          delete, desc, insert, insertOrUpdate,
                                          select, selectOneOnly, withTransaction)
 
@@ -42,7 +42,7 @@ setInfo name info = insertOrUpdate coins ["name"] ["info"] [] (name, info)
 
 saveScore :: Name -> CoinType -> Score -> PSQL Score
 saveScore name tp sc  = do
-  _ <- insertOrUpdate coins ["name"] [fromString ("score = score" ++ getOp tp ++ show sc)] [] (name, sc)
+  _ <- insertOrUpdate (coins `as` "coin") ["name"] [fromString ("score = coin.score" ++ getOp tp ++ show sc)] [] (name, sc)
   getScore name
   where getOp :: CoinType -> String
         getOp Incr = "+"
@@ -66,7 +66,7 @@ saveCoin' namespace name coin  =
     , "type"
     , "score"
     , "pre_score"
-    , "desc"
+    , "\"desc\""
     , "created_at"
     ] (namespace, name, show tp, sc, psc, des, ct)
   where tp  = getCoinType coin
@@ -91,7 +91,7 @@ getCoinList lq from size  = select histories
   , "score"
   , "pre_score"
   , "namespace"
-  , "desc"
+  , "\"desc\""
   , "created_at"
   ] (lq2T lq) lq from size (desc "id")
 
@@ -105,7 +105,7 @@ getHistories hq from size = select histories
   , "type"
   , "score"
   , "pre_score"
-  , "desc"
+  , "\"desc\""
   , "created_at"
   ] (hq2T hq) hq from size (desc "id")
 

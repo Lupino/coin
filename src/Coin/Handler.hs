@@ -1,8 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Coin.Handler
-  (
-    getScoreHandler
+  ( getScoreHandler
   , getInfoHandler
   , setInfoHandler
   , getCoinListHandler
@@ -29,7 +28,7 @@ import           Data.UnixTime
 import           Database.PSQL.Types    (From (..), HasPSQL, Size (..))
 import           Network.HTTP.Types     (status204)
 import           Web.Scotty.Haxl        (ActionH)
-import           Web.Scotty.Trans       (body, json, param, raw, rescue, status)
+import           Web.Scotty.Trans       (body, json, param, raw, status)
 import           Web.Scotty.Utils       (errBadRequest, ok, okListResult,
                                          safeParam)
 
@@ -73,7 +72,7 @@ paramPage = do
 
 getCoinListHandler :: HasPSQL u => ActionH u w ()
 getCoinListHandler = do
-  tp <- readType <$> param "type" `rescue` (\_ -> return (""::String))
+  tp <- readType <$> safeParam "type" ""
   case tp of
     Nothing -> coinListHandler LQ1
     Just t  -> coinListHandler (LQ2 t)
@@ -81,7 +80,7 @@ getCoinListHandler = do
 getCoinListWithNameSpaceHandler :: HasPSQL u => ActionH u w ()
 getCoinListWithNameSpaceHandler = do
   namespace <- param "namespace"
-  tp <- readType <$> param "type" `rescue` (\_ -> return (""::String))
+  tp <- readType <$> safeParam "type" ""
   case tp of
     Nothing -> coinListHandler (LQ3 namespace)
     Just t  -> coinListHandler (LQ4 t namespace)
@@ -102,7 +101,7 @@ coinListHandler lq = do
 
 getCoinHistoryHandler :: HasPSQL u => ActionH u w ()
 getCoinHistoryHandler = do
-  tp <- readType <$> param "type" `rescue` (\_ -> return (""::String))
+  tp <- readType <$> safeParam "type" ""
   case tp of
     Nothing -> coinHistoryHandler HQ0
     Just t  -> coinHistoryHandler (HQ3 t)
@@ -110,7 +109,7 @@ getCoinHistoryHandler = do
 getCoinHistoryByNameSpaceHandler :: HasPSQL u => ActionH u w ()
 getCoinHistoryByNameSpaceHandler = do
   namespace <- param "namespace"
-  tp <- readType <$> param "type" `rescue` (\_ -> return (""::String))
+  tp <- readType <$> safeParam "type" ""
   case tp of
     Nothing -> coinHistoryHandler (HQ2 namespace)
     Just t  -> coinHistoryHandler (HQ6 namespace t)
@@ -118,8 +117,9 @@ getCoinHistoryByNameSpaceHandler = do
 coinHistoryHandler :: HasPSQL u => (Int64 -> Int64 -> HistQuery) -> ActionH u w ()
 coinHistoryHandler hq = do
   (from, size) <- paramPage
-  startTime <- param "start_time" `rescue` (\_ -> return 0)
-  endTime <- param "end_time" `rescue` (\_ -> liftIO $ read . show . toEpochTime <$> getUnixTime)
+  startTime <- safeParam "start_time" 0
+  now <- liftIO $ read . show . toEpochTime <$> getUnixTime
+  endTime <- safeParam "end_time" now
 
   ret <- lift $ getHistories (hq startTime endTime) from size
   total <- lift $ countHistory (hq startTime endTime)
@@ -133,11 +133,11 @@ coinHistoryHandler hq = do
 saveCoinHandler :: HasPSQL u => ActionH u w ()
 saveCoinHandler = do
   name  <- param "name"
-  namespace <- param "namespace" `rescue` (\_ -> return "default")
+  namespace <- safeParam "namespace" "default"
   score <- param "score"
-  desc  <- param "desc" `rescue` (\_ -> return "")
+  desc  <- safeParam "desc" ""
   tp    <- param "type"
-  ct    <- param "created_at" `rescue` (\_ -> return 0)
+  ct    <- safeParam "created_at" 0
 
   case readType tp of
     Just tp' -> do

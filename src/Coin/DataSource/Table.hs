@@ -20,7 +20,7 @@ createCoinTable :: PSQL Int64
 createCoinTable =
   createTable coins
     [ "name VARCHAR(128) PRIMARY KEY"
-    , "info VARCHAR(1500) NOT NULL"
+    , "info VARCHAR(1500) DEFAULT ''"
     , "score BIGINT DEFAULT '0'"
     ]
 
@@ -34,7 +34,7 @@ createHistoryTable =
     , "type VARCHAR(4) NOT NULL"
     , "score BIGINT DEFAULT '0'"
     , "pre_score BIGINT DEFAULT '0'"
-    , "desc VARCHAR(1500) DEFAULT '''"
+    , "\"desc\" VARCHAR(1500) DEFAULT ''"
     , "created_at INT DEFAULT '0'"
     ]
 
