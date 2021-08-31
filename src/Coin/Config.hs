@@ -2,22 +2,20 @@
 {-# LANGUAGE RecordWildCards   #-}
 
 module Coin.Config
-  (
-    MySQLConfig (..)
+  ( PSQL (..)
   , Config (..)
-  , genMySQLPool
+  , genPSQLPool
   ) where
 
-import           Data.Aeson                (FromJSON, parseJSON, withObject,
-                                            (.:))
+import           Data.Aeson           (FromJSON, parseJSON, withObject, (.:))
+import           Database.PSQL.Config (PSQL (..), genPSQLPool)
 
-import           Yuntan.Config.MySQLConfig (MySQLConfig (..), genMySQLPool)
-
-newtype Config = Config { mysqlConfig :: MySQLConfig
-                     }
+newtype Config = Config
+  { psqlConfig :: PSQL
+  }
   deriving (Show)
 
 instance FromJSON Config where
   parseJSON = withObject "Config" $ \o -> do
-    mysqlConfig <- o .: "mysql"
+    psqlConfig <- o .: "psql"
     return Config{..}

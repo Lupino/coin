@@ -5,30 +5,24 @@ module Main
     main
   ) where
 
+import           Coin
+import qualified Coin.Config                          as C
+import           Coin.Handler
 import           Data.Default.Class                   (def)
 import           Data.Streaming.Network.Internal      (HostPreference (Host))
-import           Network.Wai.Handler.Warp             (setHost, setPort)
-import           Network.Wai.Middleware.RequestLogger (logStdout)
-import           Web.Scotty.Trans                     (get, middleware, post,
-                                                       put, scottyOptsT,
-                                                       settings)
-
-import           Coin
-import           Coin.Handler
+import           Data.String                          (fromString)
+import qualified Data.Yaml                            as Y
+import           Database.PSQL.Types                  (HasPSQL, simpleEnv)
 import           Haxl.Core                            (GenHaxl, StateStore,
                                                        initEnv, runHaxl,
                                                        stateEmpty, stateSet)
-
-import           Yuntan.Types.Scotty                  (ScottyH)
-
-import           Yuntan.Types.HasMySQL                (HasMySQL, simpleEnv)
-
-
-import qualified Coin.Config                          as C
-import qualified Data.Yaml                            as Y
-
-import           Data.Semigroup                       ((<>))
+import           Network.Wai.Handler.Warp             (setHost, setPort)
+import           Network.Wai.Middleware.RequestLogger (logStdout)
 import           Options.Applicative
+import           Web.Scotty.Haxl                      (ScottyH)
+import           Web.Scotty.Trans                     (get, middleware, post,
+                                                       put, scottyOptsT,
+                                                       settings)
 
 data Options = Options { getConfigFile  :: String
                        , getHost        :: String
@@ -73,25 +67,26 @@ program Options { getConfigFile = confFile
                 } = do
   (Right conf) <- Y.decodeFileEither confFile
 
-  let mysqlConfig  = C.mysqlConfig conf
-      mysqlThreads = C.mysqlHaxlNumThreads mysqlConfig
+  let psqlConfig  = C.psqlConfig conf
+      psqlThreads = C.psqlHaxlNumThreads psqlConfig
 
-  pool <- C.genMySQLPool mysqlConfig
+  pool <- C.genPSQLPool psqlConfig
 
-  let state = stateSet (initCoinState mysqlThreads) stateEmpty
+  let state = stateSet (initCoinState psqlThreads) stateEmpty
 
   let opts = def { settings = setPort port
                             $ setHost (Host host) (settings def) }
+      u = simpleEnv pool (fromString prefix) ()
 
-  runIO (simpleEnv pool prefix ()) state mergeData
-  scottyOptsT opts (runIO (simpleEnv pool prefix ()) state) application
+  runIO u state mergeData
+  scottyOptsT opts (runIO u state) application
   where
-        runIO :: HasMySQL u => u -> StateStore -> GenHaxl u w b -> IO b
+        runIO :: HasPSQL u => u -> StateStore -> GenHaxl u w b -> IO b
         runIO env s m = do
           env0 <- initEnv s env
           runHaxl env0 m
 
-application :: HasMySQL u => ScottyH u w ()
+application :: HasPSQL u => ScottyH u w ()
 application = do
   middleware logStdout
 

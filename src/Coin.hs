@@ -1,6 +1,5 @@
 module Coin
-  (
-    module X
+  ( module X
   ) where
 
 import           Coin.API        as X

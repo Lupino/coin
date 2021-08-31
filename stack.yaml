@@ -2,24 +2,26 @@
 # For more information, see: http://docs.haskellstack.org/en/stable/yaml_configuration/
 
 # Specifies the GHC version and set of packages available (e.g., lts-3.5, nightly-2015-09-21, ghc-7.10.2)
-resolver: lts-14.6
+resolver: lts-18.6
 
 # Local packages, usually specified by relative directory name
 packages:
 - '.'
+
 extra-deps:
-- git: https://github.com/Lupino/yuntan-common.git
-  commit: d33d75348877c1339b34e20abcff6ed4df567adf
-  subdirs:
-  - yuntan-common-scotty
-  - yuntan-common-scotty-type
-  - yuntan-common-graphql
-  - yuntan-common-config-mysql
-  - yuntan-common-list-result
-  - yuntan-common-result
-  - yuntan-common-json
 - git: https://github.com/jdnavarro/graphql-haskell.git
   commit: 40f9024b51900c73bc0f65444c16022bd73820be
+- graphql-utils-0.1.0.0@sha256:2b0bd4e98035abd3a4ed4da78904d24c644b09a3d7b9c7c7c569d41c0c77f105,968
+- aeson-result-0.1.0.0@sha256:aca78a2effeb5cc264c956aa2806cdca790ad260a12e35b13479161bca4369ed,878
+- aeson-helper-0.1.0.0@sha256:bca5efad4fc9ceea3d8eec1ada486276fe54845e72e1788b875074cba6aca619,908
+- scotty-haxl-0.1.0.0@sha256:088963822d709975e9a39875bccb95245bcee669b0f118ff7069ccdbebfcfed4,863
+- scotty-utils-0.1.0.0@sha256:6a689f7a3de8d7be2ae49fc1585f21820a2d8c21f4f1ed2c0fbf407f46e68ff4,917
+- git: https://github.com/facebook/Haxl.git
+  commit: 2d3731ec7a9959c19f74baa5613ed1a3363ab798
+- git: https://github.com/Lupino/yuntan-common.git
+  commit: fe03b360c074e6fdfd6e748df06ffa83456e17d2
+  subdirs:
+  - psql-utils
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
 # extra-deps:
 

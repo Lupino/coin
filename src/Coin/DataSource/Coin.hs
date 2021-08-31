@@ -1,82 +1,56 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Coin.DataSource.Coin
-  (
-    getScore
+  ( getScore
   , getInfo
   , setInfo
   , saveCoin
   , getCoinList
   , countCoin
 
-  , getCoinHistory
-  , countCoinHistory
+  , getHistories
+  , countHistory
 
   , dropCoin
   ) where
 
-import           Database.MySQL.Simple  (Only (..), execute, insertID, query,
-                                         withTransaction)
-import           Yuntan.Types.HasMySQL  (MySQL)
-import           Database.MySQL.Simple.QueryParams
-
+import           Coin.DataSource.Table  (coins, histories)
 import           Control.Monad          (void)
 import           Control.Monad.IO.Class (liftIO)
-import           Data.ByteString        (ByteString, empty)
+import           Data.ByteString        (ByteString)
 import           Data.Int               (Int64)
-import           Data.Maybe             (listToMaybe)
+import           Data.Maybe             (fromMaybe)
 import           Data.String            (fromString)
 import           Data.UnixTime
+import           Database.PSQL.Types    (From, Only (..), PSQL, Size, count,
+                                         delete, desc, insert, insertOrUpdate,
+                                         select, selectOneOnly, withTransaction)
 
 import           Coin.Types
 
-getScore :: Name -> MySQL Score
-getScore name prefix conn = maybe 0 fromOnly . listToMaybe <$> query conn sql (Only name)
-  where sql = fromString $ concat [ "SELECT `score` FROM `", prefix, "_coins` WHERE `name` = ?" ]
+getScore_ :: Name -> PSQL (Maybe Score)
+getScore_ name = selectOneOnly coins "score" "name=?" (Only name)
 
-getInfo :: Name -> MySQL ByteString
-getInfo name prefix conn = maybe empty fromOnly . listToMaybe <$> query conn sql (Only name)
-  where sql = fromString $ concat [ "SELECT `info` FROM `", prefix, "_coins` WHERE `name` = ?" ]
+getScore :: Name -> PSQL Score
+getScore name = fromMaybe 0 <$> getScore_ name
 
-hasCoin :: Name -> MySQL Bool
-hasCoin name prefix conn = exists <$> query conn sql (Only name)
-  where sql = fromString $ concat [ "SELECT `score` FROM `", prefix, "_coins` WHERE `name` = ?" ]
-        exists :: [Only Score] -> Bool
-        exists (_:_) = True
-        exists []    = False
+getInfo :: Name -> PSQL ByteString
+getInfo name = fromMaybe "" <$> selectOneOnly coins "info" "name=?" (Only name)
 
-setInfo :: Name -> ByteString -> MySQL ()
-setInfo name info prefix conn = do
-  exists <- hasCoin name prefix conn
-  if exists then void $ execute conn sql (info, name)
-            else void $ execute conn insertSQL (name, info)
+setInfo :: Name -> ByteString -> PSQL Int64
+setInfo name info = insertOrUpdate coins ["name"] ["info"] [] (name, info)
 
-  where sql = fromString $ concat [ "UPDATE `", prefix, "_coins` SET `info` = ? WHERE `name` = ?" ]
-        insertSQL = fromString $ concat [ "INSERT INTO `", prefix, "_coins` (`name`, `info`) VALUES (?, ?)" ]
-
-saveScore :: Name -> CoinType -> Score -> MySQL Score
-saveScore name tp sc prefix conn = do
-  exists <- hasCoin name prefix conn
-  if exists then do
-              void $ execute conn sql (Only name)
-              fromIntegral <$> insertID conn
-            else do
-              void $ execute conn insertSQL (name, 0 :: Score)
-              saveScore name tp sc prefix conn
-  where sql = fromString $ concat [ "UPDATE `", prefix, "_coins`"
-                                  , " SET `score`=LAST_INSERT_ID(`score` ", getOp tp, show sc,  ")"
-                                  , " WHERE `name` = ?"
-                                  ]
-
-        getOp :: CoinType -> String
+saveScore :: Name -> CoinType -> Score -> PSQL Score
+saveScore name tp sc  = do
+  _ <- insertOrUpdate coins ["name"] [fromString ("score = score" ++ getOp tp ++ show sc)] [] (name, sc)
+  getScore name
+  where getOp :: CoinType -> String
         getOp Incr = "+"
         getOp Decr = "-"
 
-        insertSQL = fromString $ concat [ "INSERT INTO `", prefix, "_coins` (`name`, `score`) VALUES (?, ?)" ]
-
-prepareSaveCoin :: Name -> Coin -> MySQL Coin
-prepareSaveCoin name coin prefix conn = do
-  preScore <- getScore name prefix conn
+prepareSaveCoin :: Name -> Coin -> PSQL Coin
+prepareSaveCoin name coin  = do
+  preScore <- getScore name
   ct' <- if ct > 0 then return ct else liftIO $ read . show . toEpochTime <$> getUnixTime
   return coin { getCoinPreScore = preScore
               , getCoinCreatedAt = ct'
@@ -84,64 +58,61 @@ prepareSaveCoin name coin prefix conn = do
 
   where ct = getCoinCreatedAt coin
 
-saveCoin' :: NameSpace -> Name -> Coin -> MySQL Int64
-saveCoin' namespace name coin prefix conn = execute conn sql (namespace, name, show tp, sc, psc, desc, ct)
-  where sql = fromString $ concat [ "INSERT INTO `", prefix, "_coins_history`"
-                                  , " (`namespace`, `name`, `type`, `score`, `pre_score`, `desc`, `created_at`)"
-                                  , " VALUES"
-                                  , " (?, ?, ?, ?, ?, ?, ?)"
-                                  ]
+saveCoin' :: NameSpace -> Name -> Coin -> PSQL Int64
+saveCoin' namespace name coin  =
+  insert histories
+    [ "namespace"
+    , "name"
+    , "type"
+    , "score"
+    , "pre_score"
+    , "desc"
+    , "created_at"
+    ] (namespace, name, show tp, sc, psc, des, ct)
+  where tp  = getCoinType coin
+        sc  = getCoinScore coin
+        psc = getCoinPreScore coin
+        des = getCoinDesc coin
+        ct  = getCoinCreatedAt coin
 
-        tp   = getCoinType coin
-        sc   = getCoinScore coin
-        psc  = getCoinPreScore coin
-        desc = getCoinDesc coin
-        ct   = getCoinCreatedAt coin
-
-saveCoin :: NameSpace -> Name -> Coin -> MySQL Score
-saveCoin namespace name coin prefix conn = withTransaction conn $ do
-  coin' <- prepareSaveCoin name coin prefix conn
-  changed <- saveCoin' namespace name coin' prefix conn
-  if changed > 0 then saveScore name tp sc prefix conn
+saveCoin :: NameSpace -> Name -> Coin -> PSQL Score
+saveCoin namespace name coin  = withTransaction $ do
+  coin' <- prepareSaveCoin name coin
+  changed <- saveCoin' namespace name coin'
+  if changed > 0 then saveScore name tp sc
                  else return 0
 
   where tp = getCoinType coin
         sc = getCoinScore coin
 
+getCoinList :: ListQuery -> From -> Size -> PSQL [Coin]
+getCoinList lq from size  = select histories
+  [ "type"
+  , "score"
+  , "pre_score"
+  , "namespace"
+  , "desc"
+  , "created_at"
+  ] (lq2T lq) lq from size (desc "id")
 
-getCoinList :: ListQuery -> From -> Size -> MySQL [Coin]
-getCoinList lq from size prefix conn = query conn sql $ lq2A lq ++ renderParams (from, size)
-  where sql = fromString $ concat [ "SELECT"
-                                  , " `type`, `score`, `pre_score`, `namespace`, `desc`, `created_at`"
-                                  , " FROM `", prefix, "_coins_history`"
-                                  , " WHERE ", lq2T lq, " ORDER BY `id` DESC LIMIT ?,?"
-                                  ]
+countCoin :: ListQuery -> PSQL Int64
+countCoin lq = count histories (lq2T lq) lq
 
-countCoin :: ListQuery -> MySQL Int64
-countCoin lq prefix conn = maybe 0 fromOnly . listToMaybe <$> query conn sql (lq2A lq)
-  where sql = fromString $ concat [ "SELECT count(*) FROM `", prefix, "_coins_history` WHERE ", lq2T lq]
+getHistories :: HistQuery -> From -> Size -> PSQL [CoinHistory]
+getHistories hq from size = select histories
+  [ "name"
+  , "namespace"
+  , "type"
+  , "score"
+  , "pre_score"
+  , "desc"
+  , "created_at"
+  ] (hq2T hq) hq from size (desc "id")
 
-getCoinHistory :: HistQuery -> From -> Size -> MySQL [CoinHistory]
-getCoinHistory hq from size prefix conn = query conn sql $ hq2A hq ++ renderParams (from ,size)
-  where sql = fromString $ concat [ "SELECT"
-                                  , " `name`, `namespace`, `type`, `score`, `pre_score`, `desc`, `created_at`"
-                                  , " FROM `", prefix, "_coins_history`"
-                                  , " WHERE ", hq2T hq
-                                  , " ORDER BY `id` DESC LIMIT ?,?"
-                                  ]
+countHistory :: HistQuery -> PSQL Int64
+countHistory hq = count histories (hq2T hq) hq
 
-countCoinHistory :: HistQuery -> MySQL Int64
-countCoinHistory hq prefix conn =
-  maybe 0 fromOnly . listToMaybe <$> query conn sql (hq2A hq)
-  where sql = fromString $ concat [ "SELECT"
-                                  , " count(*)"
-                                  , " FROM `", prefix, "_coins_history`"
-                                  , " WHERE ", hq2T hq
-                                  ]
-
-dropCoin :: Name -> MySQL ()
-dropCoin name prefix conn = do
-  void $ execute conn sql (Only name)
-  void $ execute conn sql1 (Only name)
-  where sql  = fromString $ concat [ "DELETE FROM `", prefix, "_coins` WHERE `name`=?"]
-        sql1 = fromString $ concat [ "DELETE FROM `", prefix, "_coins_history` WHERE `name`=?"]
+dropCoin :: Name -> PSQL ()
+dropCoin name = withTransaction $ do
+  void $ delete coins "name=?" (Only name)
+  void $ delete histories "name=?" (Only name)
