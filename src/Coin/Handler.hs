@@ -9,8 +9,8 @@ module Coin.Handler
   , saveCoinHandler
   , graphqlHandler
   , graphqlByUserHandler
-  , getCoinHistoryHandler
-  , getCoinHistoryByNameSpaceHandler
+  , getHistoriesHandler
+  , getHistoriesByNameSpaceHandler
   , dropCoinHandler
   ) where
 
@@ -99,15 +99,15 @@ coinListHandler lq = do
     , getResult = ret
     }
 
-getCoinHistoryHandler :: HasPSQL u => ActionH u w ()
-getCoinHistoryHandler = do
+getHistoriesHandler :: HasPSQL u => ActionH u w ()
+getHistoriesHandler = do
   tp <- readType <$> safeParam "type" ""
   case tp of
     Nothing -> coinHistoryHandler HQ0
     Just t  -> coinHistoryHandler (HQ3 t)
 
-getCoinHistoryByNameSpaceHandler :: HasPSQL u => ActionH u w ()
-getCoinHistoryByNameSpaceHandler = do
+getHistoriesByNameSpaceHandler :: HasPSQL u => ActionH u w ()
+getHistoriesByNameSpaceHandler = do
   namespace <- param "namespace"
   tp <- readType <$> safeParam "type" ""
   case tp of
